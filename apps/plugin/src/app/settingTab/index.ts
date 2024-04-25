@@ -2,7 +2,6 @@ import {App, PluginSettingTab, Setting} from 'obsidian';
 import {MyPlugin} from '../plugin';
 import * as pluginManifest from '../../assets/manifest.json';
 import {Draft, produce} from "immer";
-import {log} from '../utils/log';
 import {PluginSettings} from "../types";
 
 export class SettingsTab extends PluginSettingTab {
@@ -18,9 +17,7 @@ export class SettingsTab extends PluginSettingTab {
 
     containerEl.empty();
     containerEl.createEl('h1', {text: pluginManifest.name});
-
     containerEl.createEl('hr');
-    containerEl.createEl('h2', {text: 'Settings'});
 
     new Setting(containerEl).setName('Enabled').addToggle((toggle) =>
       toggle
