@@ -43,3 +43,4 @@ data.json
 
 # Nx
 tools/**/*.js
+.nx/cache
