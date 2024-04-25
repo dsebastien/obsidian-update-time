@@ -26,7 +26,6 @@ export class SettingsTab extends PluginSettingTab {
       toggle
         .setValue(this.plugin.settings.enabled)
         .onChange(async (value) => {
-          log('Publish to Ghost set to: ' + value, 'debug');
           this.plugin.settings = produce(this.plugin.settings, (draft: Draft<PluginSettings>) => {
             draft.enabled = value;
           });
