@@ -17,7 +17,6 @@ export class SettingsTab extends PluginSettingTab {
 
     containerEl.empty();
     containerEl.createEl('h1', {text: pluginManifest.name});
-    containerEl.createEl('hr');
 
     new Setting(containerEl).setName('Enabled').addToggle((toggle) =>
       toggle

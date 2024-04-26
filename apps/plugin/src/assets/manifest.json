@@ -1,6 +1,6 @@
 {
 	"id": "obsidian-update-time",
-	"name": "Obsidian Update Time",
+	"name": "Update Time",
 	"description": "Obsidian plugin that updates front matter to include creation and last update times",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
