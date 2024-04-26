@@ -1,6 +1,8 @@
 import { App, PluginSettingTab, SearchComponent, Setting } from 'obsidian';
 import { MyPlugin } from '../plugin';
-import * as pluginManifest from '../../assets/manifest.json';
+
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import * as pluginManifest from '../../../../../manifest.json';
 import { Draft, produce } from 'immer';
 import { PluginSettings } from '../types';
 import { ArgsSearchAndRemove } from './args-search-and-remove.intf';
