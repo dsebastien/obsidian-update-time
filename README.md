@@ -1,23 +1,23 @@
 # Obsidian Update Time
 
-Obsidian plugin that updates front matter to include creation and last update times.
+This Obsidian plugin updates the front matter in your notes to include the creation and last update dates/times.
+Once the plugin is installed and enabled, it will automatically add/update the properties in your metadata.
 
-## Installation
+This plugin is a simplified fork of the [update-time-on-edit plugin](https://github.com/beaussan/update-time-on-edit-obsidian). It was created because the original plugin did not work with Obsidian Publish (cfr this issue: https://github.com/beaussan/update-time-on-edit-obsidian/issues/75)
 
-TODO
+## Features
+
+Whenever a file change is detected (whether made in Obsidian or not), this plugin updates the metadata of the file to include up to date creation and modification dates.
+By default, the information is stored in the `created` and `updated` properties.
+
+The creation and modification times that are set correspond to the file's `ctime` (file creation time) and `mtime` (last modification time).
+
+This plugin supports folder exclusions, to avoid updating certain files (e.g., templates).
+
+Remember to backup your vault since this plugin will modify files.
 
 ## Configuration
 
-TODO
+Once installed, you need to go to the settings of the plugin to enable it. It is disabled by default to ensure you have time to configure it.
 
-## Contributing
-
-- Check out the open issues
-- Create new ones or discuss as needed
-- Fork the project
-- Make your changes
-- Send a PR
-
-## Development environment
-
-In addition to the classic (npm/node, installation, etc), make sure to define the OBSIDIAN_VAULT_LOCATION environment variable. It should point to the root folder of an existing Obsidian vault. When building the DEV version (`npm run build:dev` or `npm run watch`), the plugin will be copied to that vault's `.obsidian/plugins` folder. This makes it easy to build and automatically have the up to date plugin for testing in Obsidian. It also avoids having to store the codebase within the Obsidian vault...
+In the configuration, you can add a list of folders to exclude.
