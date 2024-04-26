@@ -32,3 +32,7 @@ In addition to the classic (npm/node, installation, etc), make sure to define th
 
 - Update the `minAppVersion` manually in `manifest.json` if needed
 - Run `npm version patch`, `npm version minor` or `npm version major` to update the `manifest.json` and `package.json` files
+- Commit all changes
+- Tag with the correct version number (e.g., 1.1.0)
+- Build a production version
+- Create a release on GitHub and make sure to include the following files as binary attachments: `main.js`, `manifest.json`, and `styles.css`
