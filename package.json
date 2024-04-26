@@ -24,7 +24,7 @@
     "build:prod": "nx build plugin --prod",
     "postbuild:prod": "npm run complete:dist",
     "copy:assets": "cp -r ./apps/plugin/src/assets/* ./dist/apps/plugin/",
-    "test": "nx test",
+    "test": "nx test plugin",
     "tsc": "tsc --noEmit --project ./apps/plugin/tsconfig.app.json",
     "tsc:watch": "npm run tsc -- --watch",
     "tscw": "npm run tsc:watch",
