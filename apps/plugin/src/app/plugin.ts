@@ -2,7 +2,7 @@ import { Plugin, TAbstractFile, TFile } from 'obsidian';
 import { DEFAULT_SETTINGS, PluginSettings } from './types';
 import { SettingsTab } from './settingTab';
 import { log } from './utils/log';
-import { produce } from 'immer';
+import { Draft, produce } from 'immer';
 import { isTFile } from './utils/is-tfile.fn';
 import { isExcalidrawFile } from './utils/is-excalidraw-file.fn';
 import {
@@ -49,19 +49,39 @@ export class MyPlugin extends Plugin {
     if (!loadedSettings) {
       log('Using default settings', 'debug');
       loadedSettings = produce(DEFAULT_SETTINGS, () => DEFAULT_SETTINGS);
+      return;
     }
 
-    this.settings = produce(this.settings, (draft) => {
-      draft.enabled = loadedSettings.enabled;
+    let needToFixSettings = false;
+
+    this.settings = produce(this.settings, (draft: Draft<PluginSettings>) => {
+      if (loadedSettings.enabled) {
+        draft.enabled = loadedSettings.enabled;
+      } else {
+        log('The loaded settings miss the [enabled] property', 'debug');
+        needToFixSettings = true;
+      }
+
+      if (loadedSettings.ignoredFolders) {
+        draft.ignoredFolders = loadedSettings.ignoredFolders;
+      } else {
+        log('The loaded settings miss the [ignoredFolders] property', 'debug');
+        needToFixSettings = true;
+      }
     });
+
     log(`Settings loaded`, 'debug', loadedSettings);
+
+    if (needToFixSettings) {
+      this.saveSettings();
+    }
   }
 
   /**
    * Save the plugin settings
    */
   async saveSettings() {
-    log('Saving settings', 'debug');
+    log('Saving settings', 'debug', this.settings);
     await this.saveData(this.settings);
   }
 
