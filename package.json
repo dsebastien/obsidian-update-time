@@ -11,10 +11,8 @@
   "scripts": {
     "format": "nx format --all",
     "format:all": "npm run format",
-    "lint": "nx lint",
+    "lint": "nx lint plugin",
     "build": "npm run build:dev",
-    "serve": "npm run start",
-    "start": "nx serve",
     "prepare:dist_folder": "npm run tsc && npx rimraf ./dist/apps/plugin && npx mkdirp ./dist/apps/plugin",
     "complete:dist": "npm run version && npm run copy:assets",
     "prebuild:dev": "npm run prepare:dist_folder",
