@@ -96,12 +96,6 @@ export class MyPlugin extends Plugin {
 
     log(`Processing updated file: ${file.path}`);
 
-    // FIXME REMOVE
-    if (file.path !== "YetAnother/TestOther.md") {
-      console.log("IGNORING");
-      return;
-    }
-
     try {
       await this.app.fileManager.processFrontMatter(
         file,
