@@ -176,8 +176,15 @@ export class MyPlugin extends Plugin {
       return true;
     }
 
-    // TODO add logic for excluded folders
-    // cfr https://github.com/dsebastien/obsidian-update-time/issues/1
-    return false;
+    return this.settings.ignoredFolders.some((ignoredFolder) => {
+      if (file.path.startsWith(ignoredFolder)) {
+        log(
+          `Skipping because the file is part of an ignored folder: [${ignoredFolder}]`
+        );
+        return true;
+      } else {
+        return false;
+      }
+    });
   }
 }

@@ -6,7 +6,7 @@ import { TFile } from 'obsidian';
  * @param file
  */
 export const isExcalidrawFile = (file: TFile): boolean => {
-  const ea: any =
+  const ea =
     //@ts-expect-error this is coming from global context, injected by Excalidraw
     typeof ExcalidrawAutomate === 'undefined'
       ? undefined
