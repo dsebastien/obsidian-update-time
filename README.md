@@ -6,7 +6,9 @@ Obsidian plugin that updates front matter to include creation and last update ti
 
 TODO
 
-### Configuration
+## Configuration
+
+TODO
 
 ## Contributing
 
