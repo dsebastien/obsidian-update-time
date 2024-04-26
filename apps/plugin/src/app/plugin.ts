@@ -1,21 +1,21 @@
-import {Plugin, TAbstractFile, TFile} from 'obsidian';
-import {DEFAULT_SETTINGS, PluginSettings} from './types';
-import {SettingsTab} from './settingTab';
-import {log} from './utils/log';
-import {produce} from "immer";
-import {isTFile} from "./utils/is-tfile.fn";
-import {isExcalidrawFile} from "./utils/is-excalidraw-file.fn";
+import { Plugin, TAbstractFile, TFile } from 'obsidian';
+import { DEFAULT_SETTINGS, PluginSettings } from './types';
+import { SettingsTab } from './settingTab';
+import { log } from './utils/log';
+import { produce } from 'immer';
+import { isTFile } from './utils/is-tfile.fn';
+import { isExcalidrawFile } from './utils/is-excalidraw-file.fn';
 import {
   DATE_FORMAT,
   DEFAULT_CANVAS_FILE_NAME,
   MARKDOWN_FILE_EXTENSION,
   MINUTES_BETWEEN_SAVES,
   PROPERTY_CREATED,
-  PROPERTY_UPDATED
-} from "./constants";
-import {parseDate} from "./utils/parse-date.fn";
-import {add, format, isAfter} from "date-fns";
-import {hasName} from "./utils/has-name.fn";
+  PROPERTY_UPDATED,
+} from './constants';
+import { parseDate } from './utils/parse-date.fn';
+import { add, format, isAfter } from 'date-fns';
+import { hasName } from './utils/has-name.fn';
 
 export class MyPlugin extends Plugin {
   /**
@@ -37,8 +37,7 @@ export class MyPlugin extends Plugin {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
-  onunload() {
-  }
+  onunload() {}
 
   /**
    * Load the plugin settings
@@ -52,9 +51,9 @@ export class MyPlugin extends Plugin {
       loadedSettings = produce(DEFAULT_SETTINGS, () => DEFAULT_SETTINGS);
     }
 
-    this.settings = produce(this.settings, (draft => {
+    this.settings = produce(this.settings, (draft) => {
       draft.enabled = loadedSettings.enabled;
-    }));
+    });
     log(`Settings loaded`, 'debug', loadedSettings);
   }
 
@@ -70,7 +69,7 @@ export class MyPlugin extends Plugin {
    * Add the event handlers
    */
   setupEventHandlers() {
-    log("Adding event handlers");
+    log('Adding event handlers');
 
     this.registerEvent(
       this.app.vault.on('modify', (file) => {
@@ -78,13 +77,11 @@ export class MyPlugin extends Plugin {
           return this.handleFileChange(file);
         }
         return;
-      }),
+      })
     );
   }
 
-  async handleFileChange(
-    file: TAbstractFile,
-  ): Promise<void> {
+  async handleFileChange(file: TAbstractFile): Promise<void> {
     if (!isTFile(file)) {
       return;
     }
@@ -97,45 +94,52 @@ export class MyPlugin extends Plugin {
     log(`Processing updated file: ${file.path}`);
 
     try {
-      await this.app.fileManager.processFrontMatter(
-        file,
-        (frontMatter) => {
-          log('Current file stat: ', 'debug', file.stat);
+      await this.app.fileManager.processFrontMatter(file, (frontMatter) => {
+        log('Current file stat: ', 'debug', file.stat);
 
-          const createdKey = PROPERTY_CREATED;
-          const updatedKey = PROPERTY_UPDATED;
+        const createdKey = PROPERTY_CREATED;
+        const updatedKey = PROPERTY_UPDATED;
 
-          const cTime = parseDate(file.stat.ctime, DATE_FORMAT);
-          const mTime = parseDate(file.stat.mtime, DATE_FORMAT);
+        const cTime = parseDate(file.stat.ctime, DATE_FORMAT);
+        const mTime = parseDate(file.stat.mtime, DATE_FORMAT);
 
-          if (!mTime || !cTime) {
-            log('Could not determine the creation/modification times. Skipping...');
-            return;
-          }
+        if (!mTime || !cTime) {
+          log(
+            'Could not determine the creation/modification times. Skipping...'
+          );
+          return;
+        }
 
-          if (!frontMatter[createdKey]) {
-            log('Adding the created property');
-            frontMatter[createdKey] = format(cTime, DATE_FORMAT);
-          }
+        if (!frontMatter[createdKey]) {
+          log('Adding the created property');
+          frontMatter[createdKey] = format(cTime, DATE_FORMAT);
+        }
 
-          const currentMTimePropertyValue = parseDate(frontMatter[updatedKey], DATE_FORMAT);
+        const currentMTimePropertyValue = parseDate(
+          frontMatter[updatedKey],
+          DATE_FORMAT
+        );
 
-          // If the updated property isn't set or has no valid value
-          if (!frontMatter[updatedKey] || !currentMTimePropertyValue) {
-            log('Adding the updated property');
-            frontMatter[updatedKey] = format(mTime, DATE_FORMAT);
-            return;
-          }
+        // If the updated property isn't set or has no valid value
+        if (!frontMatter[updatedKey] || !currentMTimePropertyValue) {
+          log('Adding the updated property');
+          frontMatter[updatedKey] = format(mTime, DATE_FORMAT);
+          return;
+        }
 
-          if (this.shouldUpdateMTime(mTime, currentMTimePropertyValue)) {
-            frontMatter[updatedKey] = format(mTime, DATE_FORMAT);
-            log('Updating the updated property');
-            return;
-          }
-        });
+        if (this.shouldUpdateMTime(mTime, currentMTimePropertyValue)) {
+          frontMatter[updatedKey] = format(mTime, DATE_FORMAT);
+          log('Updating the updated property');
+          return;
+        }
+      });
     } catch (e: unknown) {
       if (hasName(e) && 'YAMLParseError' === e.name) {
-        log(`Failed to update creation/update times because the front matter of [${file.path}] is malformed`, 'warn', e);
+        log(
+          `Failed to update creation/update times because the front matter of [${file.path}] is malformed`,
+          'warn',
+          e
+        );
       }
     }
   }

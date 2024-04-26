@@ -1,4 +1,4 @@
-import {TFile} from "obsidian";
+import { TFile } from 'obsidian';
 
 /**
  * Check if the given TFile is an Excalidraw file
@@ -11,6 +11,6 @@ export const isExcalidrawFile = (file: TFile): boolean => {
     typeof ExcalidrawAutomate === 'undefined'
       ? undefined
       : //@ts-expect-error this is comming from global context, injected by Excalidraw
-      ExcalidrawAutomate; //ea will be undefined if the Excalidraw plugin is not running
+        ExcalidrawAutomate; //ea will be undefined if the Excalidraw plugin is not running
   return ea ? ea.isExcalidrawFile(file) : false;
-}
+};

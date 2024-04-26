@@ -3,5 +3,8 @@ interface Named {
 }
 
 export const hasName = (obj: unknown): obj is Named => {
-  return (obj as Named)?.name !== undefined && "string" === typeof((obj as Named).name);
-}
+  return (
+    (obj as Named)?.name !== undefined &&
+    'string' === typeof (obj as Named).name
+  );
+};

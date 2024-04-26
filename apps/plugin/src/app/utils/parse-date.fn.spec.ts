@@ -1,5 +1,5 @@
-import {parseDate} from "./parse-date.fn";
-import {DATE_FORMAT} from "../constants";
+import { parseDate } from './parse-date.fn';
+import { DATE_FORMAT } from '../constants';
 
 describe(parseDate.name, () => {
   it('should return null if provided with nothing', () => {

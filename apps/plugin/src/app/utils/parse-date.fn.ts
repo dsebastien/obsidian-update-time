@@ -1,8 +1,11 @@
-import {parse} from "date-fns";
-import {log} from "./log";
+import { parse } from 'date-fns';
+import { log } from './log';
 
-export const parseDate = (input: number | string | undefined | null, dateFormat: string): Date | null => {
-  if(!input) {
+export const parseDate = (
+  input: number | string | undefined | null,
+  dateFormat: string
+): Date | null => {
+  if (!input) {
     return null;
   }
 
@@ -23,4 +26,4 @@ export const parseDate = (input: number | string | undefined | null, dateFormat:
   }
 
   return new Date(input);
-}
+};
