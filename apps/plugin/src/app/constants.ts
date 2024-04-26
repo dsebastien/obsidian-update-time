@@ -7,7 +7,7 @@ export const DATE_FORMAT = "yyyy-MM-dd'T'HH:mm";
 
 // TODO add support for defining a minimum number of minutes between edits before updating the mTime
 // Cfr https://github.com/dsebastien/obsidian-update-time/issues/4
-export const MINUTES_BETWEEN_SAVES = 0;
+export const MINUTES_BETWEEN_SAVES = 1;
 
 // TODO implement support for customizing property names
 // Cfr https://github.com/dsebastien/obsidian-update-time/issues/2
