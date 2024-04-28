@@ -17,7 +17,7 @@ import { parseDate } from './utils/parse-date.fn';
 import { add, format, isAfter } from 'date-fns';
 import { hasName } from './utils/has-name.fn';
 
-export class MyPlugin extends Plugin {
+export class UpdateTimePlugin extends Plugin {
   /**
    * The plugin settings are immutable
    */
@@ -52,27 +52,27 @@ export class MyPlugin extends Plugin {
       return;
     }
 
-    let needToFixSettings = false;
+    let needToSaveSettings = false;
 
     this.settings = produce(this.settings, (draft: Draft<PluginSettings>) => {
       if (loadedSettings.enabled) {
         draft.enabled = loadedSettings.enabled;
       } else {
         log('The loaded settings miss the [enabled] property', 'debug');
-        needToFixSettings = true;
+        needToSaveSettings = true;
       }
 
       if (loadedSettings.ignoredFolders) {
         draft.ignoredFolders = loadedSettings.ignoredFolders;
       } else {
         log('The loaded settings miss the [ignoredFolders] property', 'debug');
-        needToFixSettings = true;
+        needToSaveSettings = true;
       }
     });
 
     log(`Settings loaded`, 'debug', loadedSettings);
 
-    if (needToFixSettings) {
+    if (needToSaveSettings) {
       this.saveSettings();
     }
   }
@@ -83,6 +83,7 @@ export class MyPlugin extends Plugin {
   async saveSettings() {
     log('Saving settings', 'debug', this.settings);
     await this.saveData(this.settings);
+    log('Settings saved', 'debug', this.settings);
   }
 
   /**

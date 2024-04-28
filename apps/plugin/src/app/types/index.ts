@@ -1,7 +1,4 @@
 export interface PluginSettings {
-  /**
-   * Enable
-   */
   enabled: boolean;
   ignoredFolders: string[];
 }

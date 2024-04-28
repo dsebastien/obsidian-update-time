@@ -64,7 +64,6 @@
   },
   "dependencies": {
     "@popperjs/core": "2.11.8",
-    "builtin-modules": "3.3.0",
     "date-fns": "3.6.0",
     "immer": "10.0.4",
     "obsidian": "1.2.8",

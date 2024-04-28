@@ -1,4 +1,4 @@
-import { MyPlugin } from './app/plugin';
+import { UpdateTimePlugin } from './app/plugin';
 
 // noinspection JSUnusedGlobalSymbols
-export default MyPlugin;
+export default UpdateTimePlugin;

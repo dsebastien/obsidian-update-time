@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, SearchComponent, Setting } from 'obsidian';
-import { MyPlugin } from '../plugin';
+import { UpdateTimePlugin } from '../plugin';
 
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import * as pluginManifest from '../../../../../manifest.json';
@@ -10,9 +10,9 @@ import { FolderSuggest } from './folder-suggester';
 import { onlyUniqueArray } from '../utils/only-unique-array.tn';
 
 export class SettingsTab extends PluginSettingTab {
-  plugin: MyPlugin;
+  plugin: UpdateTimePlugin;
 
-  constructor(app: App, plugin: MyPlugin) {
+  constructor(app: App, plugin: UpdateTimePlugin) {
     super(app, plugin);
     this.plugin = plugin;
   }
