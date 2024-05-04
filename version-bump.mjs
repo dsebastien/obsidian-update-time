@@ -2,7 +2,6 @@ import { readFileSync, writeFileSync } from 'fs';
 
 const targetVersion = process.env.npm_package_version;
 const pluginMetadataFolder = './';
-const targetFolder = './dist/apps/plugin';
 const manifestFile = 'manifest.json';
 const versionsFile = 'versions.json';
 
@@ -17,11 +16,6 @@ writeFileSync(
   `${pluginMetadataFolder}/${manifestFile}`,
   JSON.stringify(manifest, null, '\t')
 );
-// Replace write by a copy
-writeFileSync(
-  `${targetFolder}/${manifestFile}`,
-  JSON.stringify(manifest, null, '\t')
-);
 
 // update versions.json with target version and minAppVersion from manifest.json
 console.log('Updating versions file');
@@ -32,10 +26,5 @@ versions[targetVersion] = minAppVersion;
 
 writeFileSync(
   `${pluginMetadataFolder}/${versionsFile}`,
-  JSON.stringify(versions, null, '\t')
-);
-// Replace write by a copy
-writeFileSync(
-  `${targetFolder}/${versionsFile}`,
   JSON.stringify(versions, null, '\t')
 );
