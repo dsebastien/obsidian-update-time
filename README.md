@@ -3,7 +3,7 @@
 This Obsidian plugin updates the front matter in your notes to include the creation and last update dates/times.
 Once the plugin is installed and enabled, it will automatically add/update the properties in your metadata.
 
-This plugin is a simplified fork of the [update-time-on-edit plugin](https://github.com/beaussan/update-time-on-edit-obsidian). It was created because the original plugin did not work with Obsidian Publish (cfr this issue: https://github.com/beaussan/update-time-on-edit-obsidian/issues/75)
+This plugin is a simplified reimplementation of the [update-time-on-edit plugin](https://github.com/beaussan/update-time-on-edit-obsidian). It was created because the original plugin did not work with Obsidian Publish (cfr this issue: https://github.com/beaussan/update-time-on-edit-obsidian/issues/75)
 
 ## Features
 
