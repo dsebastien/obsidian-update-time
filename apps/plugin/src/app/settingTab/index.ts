@@ -1,8 +1,6 @@
 import { App, PluginSettingTab, SearchComponent, Setting } from 'obsidian';
 import { UpdateTimePlugin } from '../plugin';
 
-// eslint-disable-next-line @nx/enforce-module-boundaries
-import * as pluginManifest from '../../../../../manifest.json';
 import { Draft, produce } from 'immer';
 import { PluginSettings } from '../types';
 import { ArgsSearchAndRemove } from './args-search-and-remove.intf';
@@ -21,9 +19,6 @@ export class SettingsTab extends PluginSettingTab {
     const { containerEl } = this;
 
     containerEl.empty();
-    containerEl.createEl('h1', { text: pluginManifest.name });
-
-    containerEl.createEl('h2', { text: 'Settings' });
 
     new Setting(containerEl).setName('Enabled').addToggle((toggle) =>
       toggle.setValue(this.plugin.settings.enabled).onChange(async (value) => {
