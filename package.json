@@ -66,7 +66,7 @@
     "@popperjs/core": "2.11.8",
     "date-fns": "3.6.0",
     "immer": "10.0.4",
-    "obsidian": "1.2.8",
+    "obsidian": "1.5.7-1",
     "tslib": "2.4.0"
   }
 }
