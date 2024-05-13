@@ -55,14 +55,21 @@ export class UpdateTimePlugin extends Plugin {
     let needToSaveSettings = false;
 
     this.settings = produce(this.settings, (draft: Draft<PluginSettings>) => {
-      if (loadedSettings.enabled) {
+      if (
+        loadedSettings.enabled !== undefined &&
+        loadedSettings.enabled !== null
+      ) {
         draft.enabled = loadedSettings.enabled;
       } else {
         log('The loaded settings miss the [enabled] property', 'debug');
         needToSaveSettings = true;
       }
 
-      if (loadedSettings.ignoredFolders) {
+      if (
+        loadedSettings.ignoredFolders !== undefined &&
+        loadedSettings.ignoredFolders !== null &&
+        Array.isArray(loadedSettings.ignoredFolders)
+      ) {
         draft.ignoredFolders = loadedSettings.ignoredFolders;
       } else {
         log('The loaded settings miss the [ignoredFolders] property', 'debug');
