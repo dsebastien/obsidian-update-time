@@ -20,6 +20,29 @@ export class SettingsTab extends PluginSettingTab {
 
     containerEl.empty();
 
+    this.renderSupportHeader(containerEl);
+
+    this.renderEnabled(containerEl);
+
+    this.renderExcludedFolders();
+  }
+
+  renderSupportHeader(containerEl: HTMLElement) {
+    new Setting(containerEl).setName('Support').setHeading();
+
+    const supportDesc = new DocumentFragment();
+    supportDesc.createDiv({
+      text: 'Buy me a coffee to support the development of this plugin ❤️',
+    });
+
+    new Setting(containerEl).setDesc(supportDesc);
+
+    this.renderBuyMeACoffeeBadge(containerEl);
+    const spacing = containerEl.createDiv();
+    spacing.style.marginBottom = '0.75em';
+  }
+
+  renderEnabled(containerEl: HTMLElement) {
     new Setting(containerEl).setName('Enabled').addToggle((toggle) =>
       toggle.setValue(this.plugin.settings.enabled).onChange(async (value) => {
         this.plugin.settings = produce(
@@ -31,11 +54,9 @@ export class SettingsTab extends PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
-
-    this.addExcludedFoldersSetting();
   }
 
-  addExcludedFoldersSetting(): void {
+  renderExcludedFolders(): void {
     this.doSearchAndRemoveList({
       currentList: this.plugin.settings.ignoredFolders,
       setValue: async (newValue) => {
@@ -48,7 +69,7 @@ export class SettingsTab extends PluginSettingTab {
       },
       name: 'Folders to exclude',
       description:
-        'Any file updated in this folder will not trigger an updated and created update.',
+        'Any file created or updated in one of these folders will not trigger an update of the created and updated fields.',
     });
   }
 
@@ -94,5 +115,19 @@ export class SettingsTab extends PluginSettingTab {
         })
       )
     );
+  }
+
+  renderBuyMeACoffeeBadge(
+    contentEl: HTMLElement | DocumentFragment,
+    width = 175
+  ) {
+    const linkEl = contentEl.createEl('a', {
+      href: 'https://www.buymeacoffee.com/dsebastien',
+    });
+    const imgEl = linkEl.createEl('img');
+    imgEl.src =
+      'https://github.com/dsebastien/obsidian-update-time/blob/master/apps/plugin/src/assets/buy-me-a-coffee.png?raw=true';
+    imgEl.alt = 'Buy me a coffee';
+    imgEl.width = width;
   }
 }
