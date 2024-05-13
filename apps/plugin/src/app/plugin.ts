@@ -97,7 +97,7 @@ export class UpdateTimePlugin extends Plugin {
    * Add the event handlers
    */
   setupEventHandlers() {
-    log('Adding event handlers');
+    log('Adding event handlers', 'debug');
 
     this.registerEvent(
       this.app.vault.on('modify', (file) => {
