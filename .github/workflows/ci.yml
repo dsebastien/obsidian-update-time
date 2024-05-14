@@ -27,9 +27,13 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-      - run: npm ci
+      - run: |
+          if [ -e package-lock.json ]; then
+            npm ci
+          else
+            npm i
+          fi
       - uses: nrwl/nx-set-shas@v4
-
       - run: git branch --track main origin/main
         if: ${{ github.event_name == 'pull_request' }}
 
