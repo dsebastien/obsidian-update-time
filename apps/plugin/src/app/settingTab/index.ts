@@ -22,8 +22,6 @@ export class SettingsTab extends PluginSettingTab {
 
     this.renderSupportHeader(containerEl);
 
-    this.renderEnabled(containerEl);
-
     this.renderExcludedFolders();
   }
 
@@ -40,20 +38,6 @@ export class SettingsTab extends PluginSettingTab {
     this.renderBuyMeACoffeeBadge(containerEl);
     const spacing = containerEl.createDiv();
     spacing.style.marginBottom = '0.75em';
-  }
-
-  renderEnabled(containerEl: HTMLElement) {
-    new Setting(containerEl).setName('Enabled').addToggle((toggle) =>
-      toggle.setValue(this.plugin.settings.enabled).onChange(async (value) => {
-        this.plugin.settings = produce(
-          this.plugin.settings,
-          (draft: Draft<PluginSettings>) => {
-            draft.enabled = value;
-          }
-        );
-        await this.plugin.saveSettings();
-      })
-    );
   }
 
   renderExcludedFolders(): void {

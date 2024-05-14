@@ -56,16 +56,6 @@ export class UpdateTimePlugin extends Plugin {
 
     this.settings = produce(this.settings, (draft: Draft<PluginSettings>) => {
       if (
-        loadedSettings.enabled !== undefined &&
-        loadedSettings.enabled !== null
-      ) {
-        draft.enabled = loadedSettings.enabled;
-      } else {
-        log('The loaded settings miss the [enabled] property', 'debug');
-        needToSaveSettings = true;
-      }
-
-      if (
         loadedSettings.ignoredFolders !== undefined &&
         loadedSettings.ignoredFolders !== null &&
         Array.isArray(loadedSettings.ignoredFolders)
@@ -101,10 +91,7 @@ export class UpdateTimePlugin extends Plugin {
 
     this.registerEvent(
       this.app.vault.on('modify', (file) => {
-        if (this.settings.enabled) {
-          return this.handleFileChange(file);
-        }
-        return;
+        return this.handleFileChange(file);
       })
     );
   }
