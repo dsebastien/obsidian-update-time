@@ -4,8 +4,8 @@ import { UpdateTimePlugin } from '../plugin';
 import { Draft, produce } from 'immer';
 import { PluginSettings } from '../types';
 import { ArgsSearchAndRemove } from './args-search-and-remove.intf';
-import { FolderSuggest } from './folder-suggester';
 import { onlyUniqueArray } from '../utils/only-unique-array.tn';
+import { FolderSuggest } from '../utils/folder-suggest';
 
 export class SettingsTab extends PluginSettingTab {
   plugin: UpdateTimePlugin;
@@ -69,7 +69,7 @@ export class SettingsTab extends PluginSettingTab {
       .setDesc(description)
       .addSearch((cb) => {
         searchInput = cb;
-        new FolderSuggest(this.app, cb.inputEl);
+        new FolderSuggest(cb.inputEl, this.app);
         cb.setPlaceholder('Example: folder1/folder2');
         // @ts-expect-error Actually exists
         cb.containerEl.addClass('time_search');
