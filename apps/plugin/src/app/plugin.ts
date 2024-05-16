@@ -96,7 +96,7 @@ export class UpdateTimePlugin extends Plugin {
   }
 
   async handleFileChange(_file: TAbstractFile): Promise<void> {
-    if (_file instanceof TFile) {
+    if (!(_file instanceof TFile)) {
       return;
     }
 
