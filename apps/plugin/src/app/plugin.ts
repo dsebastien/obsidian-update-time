@@ -101,62 +101,59 @@ export class UpdateTimePlugin extends Plugin {
     }
 
     // Safe from here on
-    const fileAsTFile = _file as TFile;
+    const file = _file as TFile;
 
-    const shouldBeIgnored = await this.shouldFileBeIgnored(fileAsTFile);
+    const shouldBeIgnored = await this.shouldFileBeIgnored(file);
     if (shouldBeIgnored) {
       return;
     }
 
-    log(`Processing updated file: ${fileAsTFile.path}`);
+    log(`Processing updated file: ${file.path}`);
 
     try {
-      await this.app.fileManager.processFrontMatter(
-        fileAsTFile,
-        (frontMatter) => {
-          log('Current file stat: ', 'debug', fileAsTFile.stat);
+      await this.app.fileManager.processFrontMatter(file, (frontMatter) => {
+        log('Current file stat: ', 'debug', file.stat);
 
-          const createdKey = PROPERTY_CREATED;
-          const updatedKey = PROPERTY_UPDATED;
+        const createdKey = PROPERTY_CREATED;
+        const updatedKey = PROPERTY_UPDATED;
 
-          const cTime = parseDate(fileAsTFile.stat.ctime, DATE_FORMAT);
-          const mTime = parseDate(fileAsTFile.stat.mtime, DATE_FORMAT);
+        const cTime = parseDate(file.stat.ctime, DATE_FORMAT);
+        const mTime = parseDate(file.stat.mtime, DATE_FORMAT);
 
-          if (!mTime || !cTime) {
-            log(
-              'Could not determine the creation/modification times. Skipping...'
-            );
-            return;
-          }
-
-          if (!frontMatter[createdKey]) {
-            log('Adding the created property');
-            frontMatter[createdKey] = format(cTime, DATE_FORMAT);
-          }
-
-          const currentMTimePropertyValue = parseDate(
-            frontMatter[updatedKey],
-            DATE_FORMAT
+        if (!mTime || !cTime) {
+          log(
+            'Could not determine the creation/modification times. Skipping...'
           );
-
-          // If the updated property isn't set or has no valid value
-          if (!frontMatter[updatedKey] || !currentMTimePropertyValue) {
-            log('Adding the updated property');
-            frontMatter[updatedKey] = format(mTime, DATE_FORMAT);
-            return;
-          }
-
-          if (this.shouldUpdateMTime(mTime, currentMTimePropertyValue)) {
-            frontMatter[updatedKey] = format(mTime, DATE_FORMAT);
-            log('Updating the updated property');
-            return;
-          }
+          return;
         }
-      );
+
+        if (!frontMatter[createdKey]) {
+          log('Adding the created property');
+          frontMatter[createdKey] = format(cTime, DATE_FORMAT);
+        }
+
+        const currentMTimePropertyValue = parseDate(
+          frontMatter[updatedKey],
+          DATE_FORMAT
+        );
+
+        // If the updated property isn't set or has no valid value
+        if (!frontMatter[updatedKey] || !currentMTimePropertyValue) {
+          log('Adding the updated property');
+          frontMatter[updatedKey] = format(mTime, DATE_FORMAT);
+          return;
+        }
+
+        if (this.shouldUpdateMTime(mTime, currentMTimePropertyValue)) {
+          frontMatter[updatedKey] = format(mTime, DATE_FORMAT);
+          log('Updating the updated property');
+          return;
+        }
+      });
     } catch (e: unknown) {
       if (hasName(e) && 'YAMLParseError' === e.name) {
         log(
-          `Failed to update creation/update times because the front matter of [${_file.path}] is malformed`,
+          `Failed to update creation/update times because the front matter of [${file.path}] is malformed`,
           'warn',
           e
         );
