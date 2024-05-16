@@ -3,7 +3,6 @@ import { DEFAULT_SETTINGS, PluginSettings } from './types';
 import { SettingsTab } from './settingTab';
 import { log } from './utils/log';
 import { Draft, produce } from 'immer';
-import { isTFile } from './utils/is-tfile.fn';
 import { isExcalidrawFile } from './utils/is-excalidraw-file.fn';
 import {
   DATE_FORMAT,
@@ -96,62 +95,68 @@ export class UpdateTimePlugin extends Plugin {
     );
   }
 
-  async handleFileChange(file: TAbstractFile): Promise<void> {
-    if (!isTFile(file)) {
+  async handleFileChange(_file: TAbstractFile): Promise<void> {
+    if (_file instanceof TFile) {
       return;
     }
 
-    const shouldBeIgnored = await this.shouldFileBeIgnored(file);
+    // Safe from here on
+    const fileAsTFile = _file as TFile;
+
+    const shouldBeIgnored = await this.shouldFileBeIgnored(fileAsTFile);
     if (shouldBeIgnored) {
       return;
     }
 
-    log(`Processing updated file: ${file.path}`);
+    log(`Processing updated file: ${fileAsTFile.path}`);
 
     try {
-      await this.app.fileManager.processFrontMatter(file, (frontMatter) => {
-        log('Current file stat: ', 'debug', file.stat);
+      await this.app.fileManager.processFrontMatter(
+        fileAsTFile,
+        (frontMatter) => {
+          log('Current file stat: ', 'debug', fileAsTFile.stat);
 
-        const createdKey = PROPERTY_CREATED;
-        const updatedKey = PROPERTY_UPDATED;
+          const createdKey = PROPERTY_CREATED;
+          const updatedKey = PROPERTY_UPDATED;
 
-        const cTime = parseDate(file.stat.ctime, DATE_FORMAT);
-        const mTime = parseDate(file.stat.mtime, DATE_FORMAT);
+          const cTime = parseDate(fileAsTFile.stat.ctime, DATE_FORMAT);
+          const mTime = parseDate(fileAsTFile.stat.mtime, DATE_FORMAT);
 
-        if (!mTime || !cTime) {
-          log(
-            'Could not determine the creation/modification times. Skipping...'
+          if (!mTime || !cTime) {
+            log(
+              'Could not determine the creation/modification times. Skipping...'
+            );
+            return;
+          }
+
+          if (!frontMatter[createdKey]) {
+            log('Adding the created property');
+            frontMatter[createdKey] = format(cTime, DATE_FORMAT);
+          }
+
+          const currentMTimePropertyValue = parseDate(
+            frontMatter[updatedKey],
+            DATE_FORMAT
           );
-          return;
-        }
 
-        if (!frontMatter[createdKey]) {
-          log('Adding the created property');
-          frontMatter[createdKey] = format(cTime, DATE_FORMAT);
-        }
+          // If the updated property isn't set or has no valid value
+          if (!frontMatter[updatedKey] || !currentMTimePropertyValue) {
+            log('Adding the updated property');
+            frontMatter[updatedKey] = format(mTime, DATE_FORMAT);
+            return;
+          }
 
-        const currentMTimePropertyValue = parseDate(
-          frontMatter[updatedKey],
-          DATE_FORMAT
-        );
-
-        // If the updated property isn't set or has no valid value
-        if (!frontMatter[updatedKey] || !currentMTimePropertyValue) {
-          log('Adding the updated property');
-          frontMatter[updatedKey] = format(mTime, DATE_FORMAT);
-          return;
+          if (this.shouldUpdateMTime(mTime, currentMTimePropertyValue)) {
+            frontMatter[updatedKey] = format(mTime, DATE_FORMAT);
+            log('Updating the updated property');
+            return;
+          }
         }
-
-        if (this.shouldUpdateMTime(mTime, currentMTimePropertyValue)) {
-          frontMatter[updatedKey] = format(mTime, DATE_FORMAT);
-          log('Updating the updated property');
-          return;
-        }
-      });
+      );
     } catch (e: unknown) {
       if (hasName(e) && 'YAMLParseError' === e.name) {
         log(
-          `Failed to update creation/update times because the front matter of [${file.path}] is malformed`,
+          `Failed to update creation/update times because the front matter of [${_file.path}] is malformed`,
           'warn',
           e
         );
