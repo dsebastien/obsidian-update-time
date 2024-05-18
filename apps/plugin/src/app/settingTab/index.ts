@@ -20,9 +20,8 @@ export class SettingsTab extends PluginSettingTab {
 
     containerEl.empty();
 
-    this.renderSupportHeader(containerEl);
-
     this.renderExcludedFolders();
+    this.renderSupportHeader(containerEl);
   }
 
   renderSupportHeader(containerEl: HTMLElement) {
@@ -37,7 +36,7 @@ export class SettingsTab extends PluginSettingTab {
 
     this.renderBuyMeACoffeeBadge(containerEl);
     const spacing = containerEl.createDiv();
-    spacing.style.marginBottom = '0.75em';
+    spacing.style.marginTop = '0.75em';
   }
 
   renderExcludedFolders(): void {
@@ -71,8 +70,6 @@ export class SettingsTab extends PluginSettingTab {
         searchInput = cb;
         new FolderSuggest(cb.inputEl, this.app);
         cb.setPlaceholder('Example: folder1/folder2');
-        // @ts-expect-error Actually exists
-        cb.containerEl.addClass('time_search');
       })
       .addButton((cb) => {
         cb.setIcon('plus');

@@ -108,7 +108,7 @@ export class UpdateTimePlugin extends Plugin {
       return;
     }
 
-    log(`Processing updated file: ${file.path}`);
+    log(`Processing updated file: ${file.path}`, 'debug');
 
     try {
       await this.app.fileManager.processFrontMatter(file, (frontMatter) => {
@@ -122,13 +122,14 @@ export class UpdateTimePlugin extends Plugin {
 
         if (!mTime || !cTime) {
           log(
-            'Could not determine the creation/modification times. Skipping...'
+            'Could not determine the creation/modification times. Skipping...',
+            'debug'
           );
           return;
         }
 
         if (!frontMatter[createdKey]) {
-          log('Adding the created property');
+          log('Adding the created property', 'debug');
           frontMatter[createdKey] = format(cTime, DATE_FORMAT);
         }
 
@@ -139,14 +140,14 @@ export class UpdateTimePlugin extends Plugin {
 
         // If the updated property isn't set or has no valid value
         if (!frontMatter[updatedKey] || !currentMTimePropertyValue) {
-          log('Adding the updated property');
+          log('Adding the updated property', 'debug');
           frontMatter[updatedKey] = format(mTime, DATE_FORMAT);
           return;
         }
 
         if (this.shouldUpdateMTime(mTime, currentMTimePropertyValue)) {
           frontMatter[updatedKey] = format(mTime, DATE_FORMAT);
-          log('Updating the updated property');
+          log('Updating the updated property', 'debug');
           return;
         }
       });
@@ -196,7 +197,8 @@ export class UpdateTimePlugin extends Plugin {
     return this.settings.ignoredFolders.some((ignoredFolder) => {
       if (file.path.startsWith(ignoredFolder)) {
         log(
-          `Skipping because the file is part of an ignored folder: [${ignoredFolder}]`
+          `Skipping because the file is part of an ignored folder: [${ignoredFolder}]`,
+          'debug'
         );
         return true;
       } else {
