@@ -1,7 +1,7 @@
 {
   "name": "obsidian-update-time",
   "description": "Obsidian plugin that updates front matter to include creation and last update times",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "license": "MIT",
   "author": {
     "name": "Sébastien Dubois",
