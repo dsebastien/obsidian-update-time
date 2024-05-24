@@ -86,7 +86,7 @@ export class UpdateTimePlugin extends Plugin {
    * Add the event handlers
    */
   setupEventHandlers() {
-    log('Adding event handlers', 'debug');
+    //log('Adding event handlers', 'debug');
 
     this.registerEvent(
       this.app.vault.on('modify', (file) => {
@@ -108,11 +108,11 @@ export class UpdateTimePlugin extends Plugin {
       return;
     }
 
-    log(`Processing updated file: ${file.path}`, 'debug');
+    //log(`Processing updated file: ${file.path}`, 'debug');
 
     try {
       await this.app.fileManager.processFrontMatter(file, (frontMatter) => {
-        log('Current file stat: ', 'debug', file.stat);
+        //log('Current file stat: ', 'debug', file.stat);
 
         const createdKey = PROPERTY_CREATED;
         const updatedKey = PROPERTY_UPDATED;
@@ -129,7 +129,7 @@ export class UpdateTimePlugin extends Plugin {
         }
 
         if (!frontMatter[createdKey]) {
-          log('Adding the created property', 'debug');
+          //log('Adding the created property', 'debug');
           frontMatter[createdKey] = format(cTime, DATE_FORMAT);
         }
 
@@ -140,14 +140,14 @@ export class UpdateTimePlugin extends Plugin {
 
         // If the updated property isn't set or has no valid value
         if (!frontMatter[updatedKey] || !currentMTimePropertyValue) {
-          log('Adding the updated property', 'debug');
+          //log('Adding the updated property', 'debug');
           frontMatter[updatedKey] = format(mTime, DATE_FORMAT);
           return;
         }
 
         if (this.shouldUpdateMTime(mTime, currentMTimePropertyValue)) {
           frontMatter[updatedKey] = format(mTime, DATE_FORMAT);
-          log('Updating the updated property', 'debug');
+          //log('Updating the updated property', 'debug');
           return;
         }
       });
@@ -170,7 +170,7 @@ export class UpdateTimePlugin extends Plugin {
   }
 
   async shouldFileBeIgnored(file: TFile): Promise<boolean> {
-    log(`Checking if the file should be ignored: ${file.path}`, 'debug');
+    //log(`Checking if the file should be ignored: ${file.path}`, 'debug');
     if (!file.path) {
       return true;
     }
@@ -196,10 +196,7 @@ export class UpdateTimePlugin extends Plugin {
 
     return this.settings.ignoredFolders.some((ignoredFolder) => {
       if (file.path.startsWith(ignoredFolder)) {
-        log(
-          `Skipping because the file is part of an ignored folder: [${ignoredFolder}]`,
-          'debug'
-        );
+        //log(`Skipping because the file is part of an ignored folder: [${ignoredFolder}]`,'debug');
         return true;
       } else {
         return false;
