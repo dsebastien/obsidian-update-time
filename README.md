@@ -25,3 +25,6 @@ In the configuration, you can add a list of folders to exclude.
 ## News & support
 
 To stay up to date about this plugin, Obsidian in general, Personal Knowledge Management and note-taking, subscribe to [my newsletter](https://dsebastien.net/#/portal/signup). Note that the best way to support my work is to become a paid subscriber ❤️.
+
+## Known issues
+When this plugin is enabled, it reacts to all file modifications, whether those are made inside or outside of Obsidian. If you are using a synchronization solution such as Obsidian Sync or [Syncthing](https://www.dsebastien.net/how-i-synchronize-and-backup-my-obsidian-notes/), and if Obsidian is open on multiple devices at the same time, then it can create file conflicts. To avoid this, make sure you don't leave Obsidian open on multiple devices at once, or only enable this plugin on a single device.
