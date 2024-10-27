@@ -21,7 +21,7 @@ export class SettingsTab extends PluginSettingTab {
     containerEl.empty();
 
     this.renderExcludedFolders();
-    this.renderFollowButton();
+    this.renderFollowButton(containerEl);
     this.renderSupportHeader(containerEl);
   }
 
