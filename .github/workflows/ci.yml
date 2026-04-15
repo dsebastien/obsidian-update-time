@@ -1,37 +1,35 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-
-permissions:
-  actions: read
-  contents: read
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
 
 jobs:
-  main:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    ci:
+        runs-on: ubuntu-slim
 
-      # Connect your workspace on nx.app and uncomment this to enable task distribution.
-      # The "--stop-agents-after" is optional, but allows idle agents to shut down once the "build" targets have been requested
-      # - run: npx nx-cloud start-ci-run --distribute-on="5 linux-medium-js" --stop-agents-after="build"
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v6
 
-      # Install dependencies and cache node modules
-      - uses: actions/setup-node@v3
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-      - run: npm ci
+            - name: Setup Bun
+              uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
 
-      - uses: nrwl/nx-set-shas@v4
-      - run: git branch --track main origin/main
-        if: ${{ github.event_name == 'pull_request' }}
+            - name: Install dependencies
+              run: bun install --frozen-lockfile
 
-      - run: npx nx-cloud record -- nx format:check
-      - run: npx nx affected -t lint test build
+            - name: Type check
+              run: bun run tsc
+
+            - name: Lint
+              run: bun run lint
+
+            - name: Test
+              run: bun test
+
+            - name: Format check
+              run: bun run format:check
