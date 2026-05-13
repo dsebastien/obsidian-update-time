@@ -7,7 +7,12 @@ depth = 2
 [install]
 auto = "auto"
 exact = true
-optional = false
+# Optional deps must stay enabled — packages like @parcel/watcher (a transitive
+# dep of @tailwindcss/cli) require platform-specific prebuilts that are
+# declared as optionalDependencies. With optional = false the build crashes in
+# CI at module-load time with "No prebuild or local build of @parcel/watcher
+# found". Locally `bunx` lazy-installs them; in CI it doesn't.
+optional = true
 # Only install package versions published at least 3 days ago
 minimumReleaseAge = 259200
 # These packages will bypass the 3-day minimum age requirement
