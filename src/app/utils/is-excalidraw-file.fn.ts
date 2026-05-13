@@ -10,8 +10,8 @@ interface ExcalidrawAutomateApi {
  * @param file
  */
 export const isExcalidrawFile = (file: TFile): boolean => {
-    // ExcalidrawAutomate is injected into the global context by the Excalidraw plugin
-    const globalCtx = globalThis as unknown as {
+    // ExcalidrawAutomate is injected into the window by the Excalidraw plugin
+    const globalCtx = window as unknown as {
         ExcalidrawAutomate?: ExcalidrawAutomateApi
     }
     const ea = globalCtx.ExcalidrawAutomate
