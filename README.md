@@ -38,6 +38,14 @@ Full settings reference: [docs/configuration.md](./docs/configuration.md). User 
 
 **Important:** this plugin modifies files in your vault. **Back up your vault before enabling it.**
 
+## What the plugin accesses
+
+- **Vault read** — listens for `vault.on('modify')`. For each modified file, the plugin reads the file's content once (to skip empty notes and Excalidraw files).
+- **Vault write** — only sets two front-matter properties on `.md` files: `created` (when missing) and `updated` (debounced, every minute at most). No other file content is touched.
+- **No file enumeration loops** — the plugin does not iterate the vault on a schedule. It only reacts to Obsidian's own `modify` events.
+- **No network** — no `fetch`, no analytics, no remote services. The Buy Me a Coffee badge image in the settings tab is bundled with the plugin and rendered locally.
+- **Excluded folders** — files whose path starts with any folder listed in **Settings → Update Time** are skipped entirely (no read, no write).
+
 ## Known issues
 
 ### Multi-device sync conflicts

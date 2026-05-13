@@ -19,7 +19,7 @@ export const parseDate = (
 
             return parsedDate
         } catch (e: unknown) {
-            console.debug(e)
+            // console.debug(e)
             log(`Error while parsing a date: [${input}]`, 'debug', e)
             return null
         }

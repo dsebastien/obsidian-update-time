@@ -25,6 +25,14 @@ Update Time automatically maintains `created` and `updated` front-matter propert
 
 **Important:** This plugin modifies files in your vault. Back up your vault before enabling it.
 
+## What the plugin accesses
+
+- **Vault read** — listens for Obsidian's `vault.on('modify')` event. For each modified file, the plugin reads its content once to filter out empty notes and Excalidraw files.
+- **Vault write** — only writes two front-matter properties on `.md` files: `created` (when missing) and `updated` (refreshed at most once per minute).
+- **No vault scans** — the plugin does not iterate over your vault on a timer; it only reacts to modify events emitted by Obsidian.
+- **No network calls** — no analytics, no remote services. The Buy Me a Coffee badge in the settings tab is bundled inside the plugin and rendered locally.
+- **Excluded folders** — any file whose path starts with a folder listed in **Settings → Update Time** is skipped entirely (no read, no write).
+
 ## About
 
 Created by [Sébastien Dubois](https://dsebastien.net).

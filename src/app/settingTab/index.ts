@@ -7,6 +7,7 @@ import type { PluginSettings } from '../types'
 import type { ArgsSearchAndRemove } from './args-search-and-remove.intf'
 import { onlyUniqueArray } from '../utils/only-unique-array.tn'
 import { FolderSuggest } from '../utils/folder-suggest'
+import { BUY_ME_A_COFFEE_BADGE_DATA_URL } from '../assets/buy-me-a-coffee'
 
 export class SettingsTab extends PluginSettingTab {
     plugin: UpdateTimePlugin
@@ -112,8 +113,7 @@ export class SettingsTab extends PluginSettingTab {
             href: 'https://www.buymeacoffee.com/dsebastien'
         })
         const imgEl = linkEl.createEl('img')
-        imgEl.src =
-            'https://github.com/dsebastien/obsidian-plugin-template/raw/main/apps/plugin/src/assets/buy-me-a-coffee.png'
+        imgEl.src = BUY_ME_A_COFFEE_BADGE_DATA_URL
         imgEl.alt = 'Buy me a coffee'
         imgEl.width = width
     }
