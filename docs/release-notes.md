@@ -1,5 +1,12 @@
 # Release Notes
 
+## 1.1.2 (2026-05-13)
+
+### Features
+
+- **all:** added a command to insert properties in all notes
+- **all:** added way to customize properties
+
 ## 1.1.1 (2026-05-13)
 
 ## 1.1.0 (2026-05-13)
