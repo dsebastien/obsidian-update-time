@@ -7,11 +7,12 @@ depth = 2
 [install]
 auto = "auto"
 exact = true
-# Optional deps must stay enabled — packages like @parcel/watcher (a transitive
-# dep of @tailwindcss/cli) require platform-specific prebuilts that are
-# declared as optionalDependencies. With optional = false the build crashes in
-# CI at module-load time with "No prebuild or local build of @parcel/watcher
-# found". Locally `bunx` lazy-installs them; in CI it doesn't.
+# Optional deps must stay enabled — @tailwindcss/cli pulls in @parcel/watcher,
+# which require()s a platform-specific prebuilt at module load. With
+# optional = false the release build crashes on Bun 1.3.14+ with "No prebuild
+# or local build of @parcel/watcher found". Earlier Bun versions tolerated
+# this through side channels (e.g. bunx's lazy resolver), but the supported
+# fix is to keep optional dependencies enabled.
 optional = true
 # Only install package versions published at least 3 days ago
 minimumReleaseAge = 259200
