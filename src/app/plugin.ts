@@ -17,6 +17,7 @@ import {
 import { parseDate } from './utils/parse-date.fn'
 import { add, format, isAfter } from 'date-fns'
 import { hasName } from './utils/has-name.fn'
+import { resolvePropertyName } from './utils/resolve-property-name.fn'
 
 export class UpdateTimePlugin extends Plugin {
     /**
@@ -63,6 +64,20 @@ export class UpdateTimePlugin extends Plugin {
                 draft.ignoredFolders = loadedSettings.ignoredFolders
             } else {
                 log('The loaded settings miss the [ignoredFolders] property', 'debug')
+                needToSaveSettings = true
+            }
+
+            if (typeof loadedSettings.createdPropertyName === 'string') {
+                draft.createdPropertyName = loadedSettings.createdPropertyName
+            } else {
+                log('The loaded settings miss the [createdPropertyName] property', 'debug')
+                needToSaveSettings = true
+            }
+
+            if (typeof loadedSettings.updatedPropertyName === 'string') {
+                draft.updatedPropertyName = loadedSettings.updatedPropertyName
+            } else {
+                log('The loaded settings miss the [updatedPropertyName] property', 'debug')
                 needToSaveSettings = true
             }
         })
@@ -115,8 +130,14 @@ export class UpdateTimePlugin extends Plugin {
             await this.app.fileManager.processFrontMatter(file, (frontMatter) => {
                 //log('Current file stat: ', 'debug', file.stat);
 
-                const createdKey = PROPERTY_CREATED
-                const updatedKey = PROPERTY_UPDATED
+                const createdKey = resolvePropertyName(
+                    this.settings.createdPropertyName,
+                    PROPERTY_CREATED
+                )
+                const updatedKey = resolvePropertyName(
+                    this.settings.updatedPropertyName,
+                    PROPERTY_UPDATED
+                )
 
                 const cTime = parseDate(file.stat.ctime, DATE_FORMAT)
                 const mTime = parseDate(file.stat.mtime, DATE_FORMAT)

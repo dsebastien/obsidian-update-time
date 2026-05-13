@@ -9,7 +9,6 @@ export const DATE_FORMAT = "yyyy-MM-dd'T'HH:mm"
 // Cfr https://github.com/dsebastien/obsidian-update-time/issues/4
 export const MINUTES_BETWEEN_SAVES = 1
 
-// TODO implement support for customizing property names
-// Cfr https://github.com/dsebastien/obsidian-update-time/issues/2
+// Default front-matter property names. Users can override these in the settings tab.
 export const PROPERTY_CREATED = 'created'
 export const PROPERTY_UPDATED = 'updated'

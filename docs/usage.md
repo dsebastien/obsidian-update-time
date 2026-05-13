@@ -14,6 +14,8 @@ Whenever a Markdown file in your vault is modified — by you editing it in Obsi
 - `created` — set once, on the first update after the plugin sees the file. It is never overwritten afterwards.
 - `updated` — refreshed whenever the file's `mtime` moves ahead of the current value by more than one minute.
 
+The property names default to `created` and `updated` but are configurable — see [Configuration](./configuration.md).
+
 Values use the format `yyyy-MM-dd'T'HH:mm`, for example:
 
 ```yaml
@@ -48,3 +50,5 @@ Changes take effect immediately — no reload required.
 ## Manual front matter
 
 You can always edit `created` and `updated` manually. The plugin will not overwrite your `created` value. It will only overwrite `updated` when the file's `mtime` is more than one minute ahead of the value you wrote — that is, after you actually modify the file again.
+
+If you have renamed the properties in the settings tab, the same rules apply to your custom names.

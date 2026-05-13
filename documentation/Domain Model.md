@@ -7,10 +7,12 @@
 ```ts
 interface PluginSettings {
     ignoredFolders: string[]
+    createdPropertyName: string
+    updatedPropertyName: string
 }
 ```
 
-The only persisted state. Loaded via `Plugin.loadData()`, saved via `Plugin.saveData()`. Mutated immutably through `immer`'s `produce`.
+The only persisted state. Loaded via `Plugin.loadData()`, saved via `Plugin.saveData()`. Mutated immutably through `immer`'s `produce`. The two property-name fields are user-overridable front-matter keys; empty/whitespace values are tolerated in storage and resolved to `PROPERTY_CREATED` / `PROPERTY_UPDATED` at write time via `resolvePropertyName`. Settings persisted by older versions without these fields are migrated on first load.
 
 ### `ArgsSearchAndRemove` (`src/app/settingTab/args-search-and-remove.intf.ts`)
 
@@ -58,12 +60,14 @@ handleFileChange(TAbstractFile)
         │
         ▼
 app.fileManager.processFrontMatter(file, mut)
+        ├─ createdKey = resolvePropertyName(settings.createdPropertyName, PROPERTY_CREATED)
+        ├─ updatedKey = resolvePropertyName(settings.updatedPropertyName, PROPERTY_UPDATED)
         ├─ cTime  = parseDate(file.stat.ctime, DATE_FORMAT)
         ├─ mTime  = parseDate(file.stat.mtime, DATE_FORMAT)
-        ├─ if !frontMatter[created]  → frontMatter[created] = format(cTime)
-        ├─ if !frontMatter[updated]  → frontMatter[updated] = format(mTime)
-        └─ else if shouldUpdateMTime(mTime, parsed(updated))
-                                     → frontMatter[updated] = format(mTime)
+        ├─ if !frontMatter[createdKey]  → frontMatter[createdKey] = format(cTime)
+        ├─ if !frontMatter[updatedKey]  → frontMatter[updatedKey] = format(mTime)
+        └─ else if shouldUpdateMTime(mTime, parsed(updatedKey))
+                                       → frontMatter[updatedKey] = format(mTime)
 ```
 
 `shouldUpdateMTime(newMTime, currentUpdatedTime)` returns true iff `newMTime` is after `currentUpdatedTime + MINUTES_BETWEEN_SAVES`. This is the debounce mechanism that prevents a write on every keystroke-level mtime bump.

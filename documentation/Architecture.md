@@ -22,10 +22,11 @@ The `modify` event fires on any vault file modification (from Obsidian or extern
 2. `handleFileChange` narrows to `TFile`, then calls `shouldFileBeIgnored`.
 3. `shouldFileBeIgnored` rejects the file if: path empty, extension != `md`, name == `Canvas.md`, file is empty, `isExcalidrawFile` returns true, or the path starts with any excluded folder.
 4. If the file passes, `app.fileManager.processFrontMatter` is used to read/mutate front matter atomically:
+    - Resolve `createdKey` / `updatedKey` from `settings.createdPropertyName` / `settings.updatedPropertyName` via `resolvePropertyName` (trim + fallback to `PROPERTY_CREATED` / `PROPERTY_UPDATED` when empty).
     - Read `file.stat.ctime` and `file.stat.mtime`; parse via `parseDate`.
-    - If `frontMatter[created]` missing, set it to the formatted `ctime`.
-    - If `frontMatter[updated]` missing/invalid, set it to the formatted `mtime`.
-    - Otherwise, if `shouldUpdateMTime` returns true (enough minutes have passed since the last recorded update), overwrite the `updated` value.
+    - If `frontMatter[createdKey]` missing, set it to the formatted `ctime`.
+    - If `frontMatter[updatedKey]` missing/invalid, set it to the formatted `mtime`.
+    - Otherwise, if `shouldUpdateMTime` returns true (enough minutes have passed since the last recorded update), overwrite the `updatedKey` value.
 5. `YAMLParseError` is caught and logged as a warning; nothing else is thrown.
 
 ## Constants
@@ -33,13 +34,14 @@ The `modify` event fires on any vault file modification (from Obsidian or extern
 Defined in `src/app/constants.ts`:
 
 - `DATE_FORMAT = "yyyy-MM-dd'T'HH:mm"` — storage format for both properties.
-- `PROPERTY_CREATED = 'created'`, `PROPERTY_UPDATED = 'updated'` — property names.
+- `PROPERTY_CREATED = 'created'`, `PROPERTY_UPDATED = 'updated'` — **defaults** for the front-matter property names. The effective names are read from `settings.createdPropertyName` / `settings.updatedPropertyName` and resolved through `resolvePropertyName` (trim + fallback to default on empty input).
 - `MINUTES_BETWEEN_SAVES = 1` — debounce threshold for updating `updated`.
 - `MARKDOWN_FILE_EXTENSION = 'md'`, `DEFAULT_CANVAS_FILE_NAME = 'Canvas.md'` — extension/name filters.
 
 ## Helpers (`src/app/utils/`)
 
 - `parse-date.fn.ts` — parses a string/number into a `Date` using `date-fns.parse`. Returns `null` on invalid input.
+- `resolve-property-name.fn.ts` — trims a user-configured property name and falls back to the supplied default when the trimmed value is empty or the input is not a string. Used in `handleFileChange` to derive the effective `created` / `updated` keys per write.
 - `is-excalidraw-file.fn.ts` — checks the global `ExcalidrawAutomate` (if the Excalidraw plugin is installed) to detect Excalidraw files and skip them.
 - `folder-suggest.ts` — `AbstractInputSuggest<TFolder>` implementation for the excluded-folders input field.
 - `only-unique-array.tn.ts` — array-filter helper for de-duplicating user-added folder entries.

@@ -11,6 +11,7 @@ This plugin is a simplified reimplementation of the [update-time-on-edit plugin]
 - **Automatic** — front matter updates happen whenever a note is modified (from Obsidian or from external tools).
 - **Accurate** — values come from the file's underlying `ctime` and `mtime`.
 - **Respects existing values** — `created` is never overwritten; `updated` is debounced (`MINUTES_BETWEEN_SAVES` = 1 minute) to avoid fighting active edits.
+- **Configurable property names** — pick the front-matter keys for the creation and last-update timestamps (defaults: `created`, `updated`).
 - **Folder exclusions** — skip templates, archives, or any other folder.
 - **Excalidraw-aware** — Excalidraw files are detected and skipped.
 - **Canvas-safe** — `Canvas.md` and non-Markdown files are skipped.
@@ -32,7 +33,10 @@ This plugin is a simplified reimplementation of the [update-time-on-edit plugin]
 
 ## Configuration
 
-Open **Settings → Community plugins → Update Time** to add folders to the exclusion list. Any note whose path starts with an excluded folder will not be touched.
+Open **Settings → Community plugins → Update Time** to:
+
+- Customize the front-matter keys used for the creation and last-update timestamps (defaults: `created`, `updated`).
+- Add folders to the exclusion list. Any note whose path starts with an excluded folder will not be touched.
 
 Full settings reference: [docs/configuration.md](./docs/configuration.md). User guide: [docs/](./docs/).
 

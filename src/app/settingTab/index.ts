@@ -8,6 +8,7 @@ import type { ArgsSearchAndRemove } from './args-search-and-remove.intf'
 import { onlyUniqueArray } from '../utils/only-unique-array.tn'
 import { FolderSuggest } from '../utils/folder-suggest'
 import { BUY_ME_A_COFFEE_BADGE_DATA_URL } from '../assets/buy-me-a-coffee'
+import { PROPERTY_CREATED, PROPERTY_UPDATED } from '../constants'
 
 export class SettingsTab extends PluginSettingTab {
     plugin: UpdateTimePlugin
@@ -22,9 +23,52 @@ export class SettingsTab extends PluginSettingTab {
 
         containerEl.empty()
 
+        this.renderPropertyNames(containerEl)
         this.renderExcludedFolders()
         this.renderFollowButton(containerEl)
         this.renderSupportHeader(containerEl)
+    }
+
+    renderPropertyNames(containerEl: HTMLElement): void {
+        new Setting(containerEl).setName('Front-matter properties').setHeading()
+
+        new Setting(containerEl)
+            .setName('Created property name')
+            .setDesc(
+                `Front-matter key used to store the creation time. Leave empty to use the default ("${PROPERTY_CREATED}"). Renaming this only affects future writes; existing notes are not migrated.`
+            )
+            .addText((text) => {
+                text.setPlaceholder(PROPERTY_CREATED)
+                    .setValue(this.plugin.settings.createdPropertyName)
+                    .onChange(async (value) => {
+                        this.plugin.settings = produce(
+                            this.plugin.settings,
+                            (draft: Draft<PluginSettings>) => {
+                                draft.createdPropertyName = value
+                            }
+                        )
+                        await this.plugin.saveSettings()
+                    })
+            })
+
+        new Setting(containerEl)
+            .setName('Updated property name')
+            .setDesc(
+                `Front-matter key used to store the last-update time. Leave empty to use the default ("${PROPERTY_UPDATED}"). Renaming this only affects future writes; existing notes are not migrated.`
+            )
+            .addText((text) => {
+                text.setPlaceholder(PROPERTY_UPDATED)
+                    .setValue(this.plugin.settings.updatedPropertyName)
+                    .onChange(async (value) => {
+                        this.plugin.settings = produce(
+                            this.plugin.settings,
+                            (draft: Draft<PluginSettings>) => {
+                                draft.updatedPropertyName = value
+                            }
+                        )
+                        await this.plugin.saveSettings()
+                    })
+            })
     }
 
     renderFollowButton(containerEl: HTMLElement) {
