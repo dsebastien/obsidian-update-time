@@ -18,6 +18,7 @@ import { parseDate } from './utils/parse-date.fn'
 import { add, format, isAfter } from 'date-fns'
 import { hasName } from './utils/has-name.fn'
 import { resolvePropertyName } from './utils/resolve-property-name.fn'
+import { registerCommands } from './commands'
 
 export class UpdateTimePlugin extends Plugin {
     /**
@@ -33,6 +34,8 @@ export class UpdateTimePlugin extends Plugin {
         await this.loadSettings()
 
         this.setupEventHandlers()
+
+        registerCommands(this)
 
         // Add a settings screen for the plugin
         this.addSettingTab(new SettingsTab(this.app, this))

@@ -58,3 +58,13 @@ Existing GitHub issues track making the remaining constants user-configurable:
 - **Support** — section with a Buy Me A Coffee badge.
 
 Adding a folder de-duplicates via `onlyUniqueArray` before calling `saveSettings()`.
+
+## Commands
+
+Registered in `src/app/commands/index.ts` via `registerCommands(plugin)` (called from `onload`):
+
+| Command ID                        | Display name                                       | Trigger                                                                                                                               |
+| --------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `update-time:backfill-properties` | Backfill created / updated properties in all notes | Manual (command palette). Opens `BackfillConfirmModal`; on confirm runs `runBackfillProperties(plugin)` with fill-missing-only logic. |
+
+The command ID prefix is added by Obsidian (`<plugin-id>:<command-id>`); the source defines only the suffix (`backfill-properties`).

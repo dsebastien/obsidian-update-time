@@ -39,6 +39,35 @@ Dispatches to the matching `console.*` method; falls back to `console.log`.
 
 Internal runtime shape `{ name: string }`. Used by the `hasName` type guard to detect `YAMLParseError` in caught exceptions.
 
+### `BackfillResult` (`src/app/commands/backfill-properties.ts`)
+
+```ts
+interface BackfillResult {
+    total: number // every Markdown file returned by app.vault.getMarkdownFiles()
+    processed: number // files that passed the ignore filter and were handed to processFrontMatter
+    updated: number // files where applyBackfillToFrontMatter mutated front matter
+    skipped: number // files filtered out (ignored folder, Canvas, Excalidraw, empty, non-TFile, bad timestamps)
+    errors: number // YAMLParseError or any other write failure
+}
+```
+
+Returned by `runBackfillProperties` and logged at the `info` level. Not persisted.
+
+### `ApplyBackfillArgs` (`src/app/utils/apply-backfill-to-front-matter.fn.ts`)
+
+```ts
+interface ApplyBackfillArgs {
+    frontMatter: Record<string, unknown>
+    cTime: Date
+    mTime: Date
+    createdKey: string
+    updatedKey: string
+    dateFormat: string
+}
+```
+
+Pure-function argument bag. The function mutates `frontMatter` in place and returns a boolean indicating whether anything changed.
+
 ## Obsidian types used
 
 - `TAbstractFile`, `TFile`, `TFolder` — vault file/folder abstractions.

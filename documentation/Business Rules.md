@@ -16,6 +16,7 @@ This document defines the core business rules for the Update Time plugin. These 
 8. **No network calls.** The plugin runs fully local. No telemetry, no remote fetch, no third-party services at runtime.
 9. **Handle malformed YAML gracefully.** `YAMLParseError` thrown by `processFrontMatter` must be caught and logged; the file must be left untouched.
 10. **Use Obsidian's `register*` helpers for every subscription.** The `modify` listener is registered via `this.registerEvent` so it is cleaned up on unload.
+11. **Backfill is opt-in and confirmed.** The `backfill-properties` command must show `BackfillConfirmModal` before iterating the vault. The same ignore filters as the live handler apply, and the same "never overwrite a valid `created` value" rule is enforced — the batch path is allowed to bypass the debounce window but never the file filters or invariants 2/4/5.
 
 ---
 

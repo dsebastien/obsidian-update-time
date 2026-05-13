@@ -47,6 +47,25 @@ A file is excluded as soon as its path starts with any listed prefix. For exampl
 
 Changes take effect immediately — no reload required.
 
+## Backfilling existing notes
+
+When you first install the plugin, notes you already had in your vault don't have the `created` / `updated` properties yet — those properties only get added on the next modification. To populate them all in one go:
+
+1. Open the command palette (`Ctrl/Cmd + P`).
+2. Run **Update Time: Backfill created / updated properties in all notes**.
+3. Confirm in the modal.
+
+The command iterates every Markdown file in your vault. For each file it:
+
+- Skips files that match the same rules as the live handler (Canvas, Excalidraw, empty notes, excluded folders, non-Markdown).
+- Adds `created` from the file's `ctime` only if the property is missing.
+- Adds `updated` from the file's `mtime` only if the property is missing or unparsable.
+- Never overwrites a valid existing value.
+
+A notice at the top of the screen reports the start and the end of the run, with the number of files updated, skipped, and errored.
+
+**Back up your vault before running it.** The plugin writes to many files in one pass.
+
 ## Manual front matter
 
 You can always edit `created` and `updated` manually. The plugin will not overwrite your `created` value. It will only overwrite `updated` when the file's `mtime` is more than one minute ahead of the value you wrote — that is, after you actually modify the file again.

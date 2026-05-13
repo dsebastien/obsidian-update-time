@@ -14,6 +14,8 @@ Update Time automatically maintains `created` and `updated` front-matter propert
 - **Accurate** — values come from the file's underlying `ctime` and `mtime`, not from Obsidian-internal state.
 - **Non-destructive for existing values** — `created` is only set when missing; `updated` is debounced to avoid fighting your edits.
 - **Folder exclusions** — exclude templates, daily notes, or any other folder from automatic updates.
+- **Configurable property names** — rename the `created` / `updated` keys to anything you like.
+- **One-shot backfill** — a command that adds the properties to all notes you already had in your vault.
 - **Excalidraw-aware** — Excalidraw files are skipped.
 - **Fully local** — no network calls, no telemetry.
 
@@ -28,8 +30,8 @@ Update Time automatically maintains `created` and `updated` front-matter propert
 ## What the plugin accesses
 
 - **Vault read** — listens for Obsidian's `vault.on('modify')` event. For each modified file, the plugin reads its content once to filter out empty notes and Excalidraw files.
-- **Vault write** — only writes two front-matter properties on `.md` files: `created` (when missing) and `updated` (refreshed at most once per minute).
-- **No vault scans** — the plugin does not iterate over your vault on a timer; it only reacts to modify events emitted by Obsidian.
+- **Vault write** — only writes two front-matter properties on `.md` files: `created` (when missing) and `updated` (refreshed at most once per minute). The **Backfill created / updated properties in all notes** command iterates every Markdown file in the vault on demand and applies the same fill-missing-only logic.
+- **No vault scans on a timer** — the plugin does not iterate over your vault on a schedule; it only reacts to modify events emitted by Obsidian and to the explicit backfill command.
 - **No network calls** — no analytics, no remote services. The Buy Me a Coffee badge in the settings tab is bundled inside the plugin and rendered locally.
 - **Excluded folders** — any file whose path starts with a folder listed in **Settings → Update Time** is skipped entirely (no read, no write).
 

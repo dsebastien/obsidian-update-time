@@ -12,6 +12,7 @@ This plugin is a simplified reimplementation of the [update-time-on-edit plugin]
 - **Accurate** — values come from the file's underlying `ctime` and `mtime`.
 - **Respects existing values** — `created` is never overwritten; `updated` is debounced (`MINUTES_BETWEEN_SAVES` = 1 minute) to avoid fighting active edits.
 - **Configurable property names** — pick the front-matter keys for the creation and last-update timestamps (defaults: `created`, `updated`).
+- **One-shot backfill** — a command to add the front-matter properties to all existing notes that don't have them yet.
 - **Folder exclusions** — skip templates, archives, or any other folder.
 - **Excalidraw-aware** — Excalidraw files are detected and skipped.
 - **Canvas-safe** — `Canvas.md` and non-Markdown files are skipped.
