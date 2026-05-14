@@ -1,5 +1,5 @@
 {
-    "name": "obsidian-update-time",
+    "name": "update-time",
     "version": "1.1.2",
     "description": "Automatically update front matter to include creation and last update times.",
     "author": {
