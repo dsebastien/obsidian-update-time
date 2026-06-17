@@ -12,6 +12,7 @@ This plugin is a simplified reimplementation of the [update-time-on-edit plugin]
 - **Accurate** — values come from the file's underlying `ctime` and `mtime`.
 - **Respects existing values** — `created` is never overwritten; `updated` is debounced (`MINUTES_BETWEEN_SAVES` = 1 minute) to avoid fighting active edits.
 - **Configurable property names** — pick the front-matter keys for the creation and last-update timestamps (defaults: `created`, `updated`).
+- **Edit-friendly** — updates are delayed until you stop typing (configurable **Save delay**), so they don't refresh the editor mid-edit or knock your cursor out of a table.
 - **One-shot backfill** — a command to add the front-matter properties to all existing notes that don't have them yet.
 - **Folder exclusions** — skip templates, archives, or any other folder.
 - **Excalidraw-aware** — Excalidraw files are detected and skipped.
@@ -51,6 +52,7 @@ If the plugin isn't listed in the community catalog yet (or you want a specific 
 Open **Settings → Community plugins → Update Time** to:
 
 - Customize the front-matter keys used for the creation and last-update timestamps (defaults: `created`, `updated`).
+- Set the **Save delay** — how long to wait after you stop typing before updating the front matter (default: 2 seconds). Raise it if you lose your cursor while editing, e.g. inside tables.
 - Add folders to the exclusion list. Any note whose path starts with an excluded folder will not be touched.
 
 Full settings reference: [docs/configuration.md](./docs/configuration.md). User guide: [docs/](./docs/).

@@ -17,6 +17,8 @@ This document defines the core business rules for the Update Time plugin. These 
 9. **Handle malformed YAML gracefully.** `YAMLParseError` thrown by `processFrontMatter` must be caught and logged; the file must be left untouched.
 10. **Use Obsidian's `register*` helpers for every subscription.** The `modify` listener is registered via `this.registerEvent` so it is cleaned up on unload.
 11. **Backfill is opt-in and confirmed.** The `backfill-properties` command must show `BackfillConfirmModal` before iterating the vault. The same ignore filters as the live handler apply, and the same "never overwrite a valid `created` value" rule is enforced — the batch path is allowed to bypass the debounce window but never the file filters or invariants 2/4/5.
+12. **Never write front matter mid-edit.** The live handler must debounce each file's processing by `settings.saveDelayInSeconds` (default `DEFAULT_SAVE_DELAY_IN_SECONDS`, reset on every change) so writes land only once the user pauses typing — a front-matter write refreshes the editor and would otherwise lose cursor focus (e.g. inside tables). Rationale: issue #7.
+13. **Never write when nothing changes.** The live handler must skip the `processFrontMatter` write entirely when applying the rules would not mutate front matter (checked against the cached front matter first). This avoids redundant editor refreshes. Does not apply to the backfill command, which writes per its own counters.
 
 ---
 

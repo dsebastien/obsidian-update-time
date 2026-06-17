@@ -1,4 +1,5 @@
-import { Plugin, TAbstractFile, TFile } from 'obsidian'
+import { debounce, Plugin, TAbstractFile, TFile } from 'obsidian'
+import type { Debouncer } from 'obsidian'
 import { DEFAULT_SETTINGS } from './types'
 import type { PluginSettings } from './types'
 import { SettingsTab } from './settingTab'
@@ -15,9 +16,9 @@ import {
     PROPERTY_UPDATED
 } from './constants'
 import { parseDate } from './utils/parse-date.fn'
-import { add, format, isAfter } from 'date-fns'
 import { hasName } from './utils/has-name.fn'
 import { resolvePropertyName } from './utils/resolve-property-name.fn'
+import { applyTimestampsToFrontMatter } from './utils/apply-timestamps-to-front-matter.fn'
 import { registerCommands } from './commands'
 
 export class UpdateTimePlugin extends Plugin {
@@ -25,6 +26,13 @@ export class UpdateTimePlugin extends Plugin {
      * The plugin settings are immutable
      */
     settings: PluginSettings = produce(DEFAULT_SETTINGS, () => DEFAULT_SETTINGS)
+
+    /**
+     * Per-file debouncers. Each changed file is processed only once typing has
+     * paused for `saveDelayInSeconds`, so front-matter writes never land in the
+     * middle of an edit (which would refresh the editor and lose cursor focus).
+     */
+    private readonly debouncers = new Map<string, Debouncer<[TFile], void>>()
 
     /**
      * Executed as soon as the plugin loads
@@ -41,7 +49,10 @@ export class UpdateTimePlugin extends Plugin {
         this.addSettingTab(new SettingsTab(this.app, this))
     }
 
-    override onunload() {}
+    override onunload() {
+        this.debouncers.forEach((debouncer) => debouncer.cancel())
+        this.debouncers.clear()
+    }
 
     /**
      * Load the plugin settings
@@ -83,6 +94,17 @@ export class UpdateTimePlugin extends Plugin {
                 log('The loaded settings miss the [updatedPropertyName] property', 'debug')
                 needToSaveSettings = true
             }
+
+            if (
+                typeof loadedSettings.saveDelayInSeconds === 'number' &&
+                Number.isFinite(loadedSettings.saveDelayInSeconds) &&
+                loadedSettings.saveDelayInSeconds >= 0
+            ) {
+                draft.saveDelayInSeconds = loadedSettings.saveDelayInSeconds
+            } else {
+                log('The loaded settings miss the [saveDelayInSeconds] property', 'debug')
+                needToSaveSettings = true
+            }
         })
 
         log(`Settings loaded`, 'debug', loadedSettings)
@@ -98,6 +120,9 @@ export class UpdateTimePlugin extends Plugin {
     async saveSettings() {
         log('Saving settings', 'debug', this.settings)
         await this.saveData(this.settings)
+        // Drop existing debouncers so a changed save delay takes effect immediately.
+        this.debouncers.forEach((debouncer) => debouncer.cancel())
+        this.debouncers.clear()
         log('Settings saved', 'debug', this.settings)
     }
 
@@ -109,70 +134,93 @@ export class UpdateTimePlugin extends Plugin {
 
         this.registerEvent(
             this.app.vault.on('modify', (file) => {
-                return this.handleFileChange(file)
+                this.handleFileChange(file)
             })
         )
     }
 
-    async handleFileChange(_file: TAbstractFile): Promise<void> {
-        if (!(_file instanceof TFile)) {
+    /**
+     * Entry point for the `modify` event. Schedules the file for debounced
+     * processing rather than writing immediately, so writes land once typing
+     * has paused instead of in the middle of an edit.
+     */
+    handleFileChange(file: TAbstractFile): void {
+        if (!(file instanceof TFile)) {
             return
         }
 
-        // Safe from here on
-        const file = _file
+        let debouncer = this.debouncers.get(file.path)
+        if (!debouncer) {
+            const delayMs = Math.max(0, this.settings.saveDelayInSeconds) * 1000
+            debouncer = debounce(
+                (changedFile: TFile) => {
+                    void this.processFile(changedFile)
+                },
+                delayMs,
+                true
+            )
+            this.debouncers.set(file.path, debouncer)
+        }
 
+        debouncer(file)
+    }
+
+    /**
+     * Update the created / updated front-matter properties of a file.
+     *
+     * The file is only written when something actually changes, so unchanged
+     * notes never trigger an editor refresh (which would lose cursor focus).
+     */
+    async processFile(file: TFile): Promise<void> {
         const shouldBeIgnored = await this.shouldFileBeIgnored(file)
         if (shouldBeIgnored) {
             return
         }
 
-        //log(`Processing updated file: ${file.path}`, 'debug');
+        const createdKey = resolvePropertyName(this.settings.createdPropertyName, PROPERTY_CREATED)
+        const updatedKey = resolvePropertyName(this.settings.updatedPropertyName, PROPERTY_UPDATED)
+
+        const cTime = parseDate(file.stat.ctime, DATE_FORMAT)
+        const mTime = parseDate(file.stat.mtime, DATE_FORMAT)
+
+        if (!mTime || !cTime) {
+            log('Could not determine the creation/modification times. Skipping...', 'debug')
+            return
+        }
+
+        // Probe the cached front matter first: if nothing would change, skip the
+        // write entirely to avoid an unnecessary editor refresh.
+        const cachedFrontMatter = {
+            ...(this.app.metadataCache.getFileCache(file)?.frontmatter ?? {})
+        }
+        const wouldChange = applyTimestampsToFrontMatter({
+            frontMatter: cachedFrontMatter,
+            cTime,
+            mTime,
+            createdKey,
+            updatedKey,
+            dateFormat: DATE_FORMAT,
+            minutesBetweenSaves: MINUTES_BETWEEN_SAVES
+        })
+        if (!wouldChange) {
+            return
+        }
 
         try {
-            await this.app.fileManager.processFrontMatter(file, (frontMatter) => {
-                //log('Current file stat: ', 'debug', file.stat);
-
-                const createdKey = resolvePropertyName(
-                    this.settings.createdPropertyName,
-                    PROPERTY_CREATED
-                )
-                const updatedKey = resolvePropertyName(
-                    this.settings.updatedPropertyName,
-                    PROPERTY_UPDATED
-                )
-
-                const cTime = parseDate(file.stat.ctime, DATE_FORMAT)
-                const mTime = parseDate(file.stat.mtime, DATE_FORMAT)
-
-                if (!mTime || !cTime) {
-                    log('Could not determine the creation/modification times. Skipping...', 'debug')
-                    return
+            await this.app.fileManager.processFrontMatter(
+                file,
+                (frontMatter: Record<string, unknown>) => {
+                    applyTimestampsToFrontMatter({
+                        frontMatter,
+                        cTime,
+                        mTime,
+                        createdKey,
+                        updatedKey,
+                        dateFormat: DATE_FORMAT,
+                        minutesBetweenSaves: MINUTES_BETWEEN_SAVES
+                    })
                 }
-
-                if (!frontMatter[createdKey]) {
-                    //log('Adding the created property', 'debug');
-                    frontMatter[createdKey] = format(cTime, DATE_FORMAT)
-                }
-
-                const currentMTimePropertyValue = parseDate(
-                    frontMatter[updatedKey] as string | number | undefined | null,
-                    DATE_FORMAT
-                )
-
-                // If the updated property isn't set or has no valid value
-                if (!frontMatter[updatedKey] || !currentMTimePropertyValue) {
-                    //log('Adding the updated property', 'debug');
-                    frontMatter[updatedKey] = format(mTime, DATE_FORMAT)
-                    return
-                }
-
-                if (this.shouldUpdateMTime(mTime, currentMTimePropertyValue)) {
-                    frontMatter[updatedKey] = format(mTime, DATE_FORMAT)
-                    //log('Updating the updated property', 'debug');
-                    return
-                }
-            })
+            )
         } catch (e: unknown) {
             if (hasName(e) && 'YAMLParseError' === e.name) {
                 log(
@@ -182,13 +230,6 @@ export class UpdateTimePlugin extends Plugin {
                 )
             }
         }
-    }
-
-    shouldUpdateMTime(currentMTime: Date, currentUpdatedTime: Date): boolean {
-        const nextUpdate = add(currentUpdatedTime, {
-            minutes: MINUTES_BETWEEN_SAVES
-        })
-        return isAfter(currentMTime, nextUpdate)
     }
 
     async shouldFileBeIgnored(file: TFile): Promise<boolean> {

@@ -8,7 +8,7 @@ import type { ArgsSearchAndRemove } from './args-search-and-remove.intf'
 import { onlyUniqueArray } from '../utils/only-unique-array.tn'
 import { FolderSuggest } from '../utils/folder-suggest'
 import { BUY_ME_A_COFFEE_BADGE_DATA_URL } from '../assets/buy-me-a-coffee'
-import { PROPERTY_CREATED, PROPERTY_UPDATED } from '../constants'
+import { DEFAULT_SAVE_DELAY_IN_SECONDS, PROPERTY_CREATED, PROPERTY_UPDATED } from '../constants'
 
 export class SettingsTab extends PluginSettingTab {
     plugin: UpdateTimePlugin
@@ -24,9 +24,40 @@ export class SettingsTab extends PluginSettingTab {
         containerEl.empty()
 
         this.renderPropertyNames(containerEl)
+        this.renderSaveDelay(containerEl)
         this.renderExcludedFolders()
         this.renderFollowButton(containerEl)
         this.renderSupportHeader(containerEl)
+    }
+
+    renderSaveDelay(containerEl: HTMLElement): void {
+        new Setting(containerEl).setName('Behavior').setHeading()
+
+        new Setting(containerEl)
+            .setName('Save delay (seconds)')
+            .setDesc(
+                `Wait this long after you stop typing before updating the front matter. A higher value reduces how often notes are rewritten while editing, which prevents losing cursor focus (e.g. inside tables). Default: ${DEFAULT_SAVE_DELAY_IN_SECONDS}.`
+            )
+            .addText((text) => {
+                text.inputEl.type = 'number'
+                text.inputEl.min = '0'
+                text.setPlaceholder(String(DEFAULT_SAVE_DELAY_IN_SECONDS))
+                    .setValue(String(this.plugin.settings.saveDelayInSeconds))
+                    .onChange(async (value) => {
+                        const parsed = Number(value)
+                        const delay =
+                            Number.isFinite(parsed) && parsed >= 0
+                                ? parsed
+                                : DEFAULT_SAVE_DELAY_IN_SECONDS
+                        this.plugin.settings = produce(
+                            this.plugin.settings,
+                            (draft: Draft<PluginSettings>) => {
+                                draft.saveDelayInSeconds = delay
+                            }
+                        )
+                        await this.plugin.saveSettings()
+                    })
+            })
     }
 
     renderPropertyNames(containerEl: HTMLElement): void {

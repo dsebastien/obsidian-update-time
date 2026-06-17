@@ -9,6 +9,11 @@ export const DATE_FORMAT = "yyyy-MM-dd'T'HH:mm"
 // Cfr https://github.com/dsebastien/obsidian-update-time/issues/4
 export const MINUTES_BETWEEN_SAVES = 1
 
+// Idle delay before processing a changed file. Front-matter writes are debounced
+// per file so they land while the user has paused typing, not mid-word.
+// Cfr https://github.com/dsebastien/obsidian-update-time/issues/7
+export const DEFAULT_SAVE_DELAY_IN_SECONDS = 2
+
 // Default front-matter property names. Users can override these in the settings tab.
 export const PROPERTY_CREATED = 'created'
 export const PROPERTY_UPDATED = 'updated'
