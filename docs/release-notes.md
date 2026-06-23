@@ -1,5 +1,11 @@
 # Release Notes
 
+## 1.2.0 (2026-06-23)
+
+### Features
+
+- **plugin:** debounce front-matter writes to keep editor focus ([#7](https://github.com/dsebastien/obsidian-update-time/issues/7))
+
 ## 1.1.3 (2026-05-14)
 
 ## 1.1.2 (2026-05-13)
