@@ -1,5 +1,11 @@
 # Release Notes
 
+## 1.2.1 (2026-06-24)
+
+### Bug Fixes
+
+- **plugin:** ignore self-induced modify events to stop runaway updates [#8](https://github.com/dsebastien/obsidian-update-time/issues/8)
+
 ## 1.2.0 (2026-06-23)
 
 ### Features
