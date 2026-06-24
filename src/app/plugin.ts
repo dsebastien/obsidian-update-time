@@ -19,6 +19,7 @@ import { parseDate } from './utils/parse-date.fn'
 import { hasName } from './utils/has-name.fn'
 import { resolvePropertyName } from './utils/resolve-property-name.fn'
 import { applyTimestampsToFrontMatter } from './utils/apply-timestamps-to-front-matter.fn'
+import { isSelfInducedModify } from './utils/is-self-induced-modify.fn'
 import { registerCommands } from './commands'
 
 export class UpdateTimePlugin extends Plugin {
@@ -33,6 +34,16 @@ export class UpdateTimePlugin extends Plugin {
      * middle of an edit (which would refresh the editor and lose cursor focus).
      */
     private readonly debouncers = new Map<string, Debouncer<[TFile], void>>()
+
+    /**
+     * The `mtime` of the last front-matter write the plugin performed, per file.
+     *
+     * Writing front matter bumps the file's `mtime` and fires another `modify`
+     * event. This map lets the plugin recognise that echo and ignore it, so it
+     * never reacts to its own write — which, with a save delay larger than
+     * `MINUTES_BETWEEN_SAVES`, would otherwise loop forever.
+     */
+    private readonly lastWriteMtimes = new Map<string, number>()
 
     /**
      * Executed as soon as the plugin loads
@@ -52,6 +63,7 @@ export class UpdateTimePlugin extends Plugin {
     override onunload() {
         this.debouncers.forEach((debouncer) => debouncer.cancel())
         this.debouncers.clear()
+        this.lastWriteMtimes.clear()
     }
 
     /**
@@ -123,6 +135,7 @@ export class UpdateTimePlugin extends Plugin {
         // Drop existing debouncers so a changed save delay takes effect immediately.
         this.debouncers.forEach((debouncer) => debouncer.cancel())
         this.debouncers.clear()
+        this.lastWriteMtimes.clear()
         log('Settings saved', 'debug', this.settings)
     }
 
@@ -172,6 +185,16 @@ export class UpdateTimePlugin extends Plugin {
      * notes never trigger an editor refresh (which would lose cursor focus).
      */
     async processFile(file: TFile): Promise<void> {
+        // Ignore the `modify` echo produced by our own front-matter write. Each
+        // write is consumed once so the next genuine change is still processed.
+        const lastWriteMtime = this.lastWriteMtimes.get(file.path)
+        if (lastWriteMtime !== undefined) {
+            this.lastWriteMtimes.delete(file.path)
+            if (isSelfInducedModify(lastWriteMtime, file.stat.mtime)) {
+                return
+            }
+        }
+
         const shouldBeIgnored = await this.shouldFileBeIgnored(file)
         if (shouldBeIgnored) {
             return
@@ -221,6 +244,10 @@ export class UpdateTimePlugin extends Plugin {
                     })
                 }
             )
+            // Record the post-write mtime so the resulting `modify` event is
+            // recognised as our own echo and ignored (prevents the self-feeding
+            // write loop when the save delay exceeds MINUTES_BETWEEN_SAVES).
+            this.lastWriteMtimes.set(file.path, file.stat.mtime)
         } catch (e: unknown) {
             if (hasName(e) && 'YAMLParseError' === e.name) {
                 log(
