@@ -18,13 +18,17 @@ Open **Settings → Community plugins → Update Time** to access the settings t
 
 ### Save delay
 
-The plugin updates a note's front matter shortly after you change it. Each update rewrites the file, which can momentarily refresh the editor — and in **Live Preview tables** that can move your cursor out of the cell you're typing in.
+Writing front matter means rewriting the file, and Obsidian reacts to that by refreshing the editor. A refresh can move your cursor. In **Live Preview tables** it reliably does: you are typing in a cell, the plugin writes `updated`, and the cursor jumps out of the cell mid-word.
 
-To avoid this, the update is delayed until you stop typing. The **Save delay** is how many seconds of inactivity to wait first; the countdown restarts on every keystroke, so nothing is written while you're actively typing. The plugin also skips the write entirely when nothing actually needs to change.
+So the write waits for you to stop. **Save delay** is how many seconds of inactivity to wait first, counted per file, with the countdown restarting on every keystroke. Nothing is written while you are actively typing, and by the time the write lands a cursor jump costs you nothing.
 
 - Default is `2` seconds.
-- If you still lose focus while editing (e.g. you pause often inside tables), increase it to `5` or more.
-- `0` updates as soon as Obsidian reports the change (closest to the old behavior).
+- If you still lose focus while editing (for example because you pause often inside tables), raise it to `5` or more.
+- `0` writes as soon as Obsidian reports the change. That is the behavior the plugin had before the save delay existed, and it will move your cursor in tables.
+
+Changing this setting cancels anything currently pending, so the new value applies from the next keystroke onwards.
+
+On top of the delay, the plugin skips the write entirely when nothing would change. It compares the timestamps it is about to write against what the note already has, and leaves the file alone when they match. See [When the write happens](usage.md#when-the-write-happens) for how this fits together.
 
 ### Property names
 
@@ -46,10 +50,10 @@ Each added folder is displayed below the input with a **Remove** button. Duplica
 
 These are currently hard-coded in the plugin. GitHub issues exist to make them user-configurable in a future release.
 
-| Constant           | Value                | Notes                                                                               |
-| ------------------ | -------------------- | ----------------------------------------------------------------------------------- |
-| Date format        | `yyyy-MM-dd'T'HH:mm` | Tracked in [issue #3](https://github.com/dsebastien/obsidian-update-time/issues/3). |
-| Debounce threshold | `1` minute           | Tracked in [issue #4](https://github.com/dsebastien/obsidian-update-time/issues/4). |
+| Constant                      | Value                | Notes                                                                                                                                                                               |
+| ----------------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Date format                   | `yyyy-MM-dd'T'HH:mm` | Tracked in [issue #3](https://github.com/dsebastien/obsidian-update-time/issues/3).                                                                                                 |
+| Minimum minutes between saves | `1` minute           | How stale `updated` has to be before it is refreshed again. Separate from the save delay above. Tracked in [issue #4](https://github.com/dsebastien/obsidian-update-time/issues/4). |
 
 ## Storage
 

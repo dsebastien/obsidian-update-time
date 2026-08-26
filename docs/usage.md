@@ -27,13 +27,30 @@ updated: 2024-10-28T09:33
 
 ## What triggers an update
 
-The plugin listens to Obsidian's vault `modify` event. Any write to a `.md` file inside your vault triggers the handler. The handler skips the file when any of the following is true:
+The plugin listens to Obsidian's vault `modify` event. Any write to a `.md` file inside your vault schedules that file for processing (see [When the write happens](#when-the-write-happens) below). The file is then skipped when any of the following is true:
 
 - The file is not a Markdown file (extension != `.md`).
 - The file is named `Canvas.md`.
 - The file body is empty.
 - The Excalidraw plugin is installed and reports the file as an Excalidraw drawing.
 - The file is inside any folder listed in the plugin's **Folders to exclude** setting.
+
+## When the write happens
+
+Not immediately. Each changed file gets its own timer, and the front matter is only written once that file has been quiet for a couple of seconds. The countdown restarts on every keystroke, so nothing is written while you are still typing. The delay is configurable through the **Save delay** setting and defaults to 2 seconds.
+
+### Why the delay exists
+
+Writing front matter means rewriting the file. Obsidian reacts to that by refreshing the editor, and a refresh can move your cursor. In Live Preview tables it reliably does: you are typing in a cell, the plugin writes `updated`, and the cursor jumps out of the cell mid-word. The same thing happened often enough while editing long notes to make the plugin genuinely annoying to use.
+
+Waiting for a pause solves it. By the time the write lands you have already stopped typing, so a cursor jump costs you nothing.
+
+Two other things reduce the number of writes:
+
+- **Nothing to change means nothing is written.** The plugin builds the new front matter first and compares. If neither `created` nor `updated` would change, the file is left alone and no refresh happens at all.
+- **`updated` only moves once a minute.** Even when you edit continuously, the timestamp is refreshed at most once per minute, so a long editing session produces one write per minute rather than one every few seconds.
+
+The timers are per file, so editing several notes in parallel works as expected. Changing the **Save delay** setting cancels anything currently pending and takes effect right away.
 
 ## Excluding folders
 

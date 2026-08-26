@@ -14,6 +14,7 @@ export default tseslint.config(
         ignores: [
             '**/dist/**',
             '**/node_modules/**',
+            '**/tmp/**',
             'scripts/**',
             '.cz-config.cjs',
             'prettier.config.cjs',
