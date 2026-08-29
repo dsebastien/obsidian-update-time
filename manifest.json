@@ -2,7 +2,7 @@
     "id": "update-time",
     "name": "Update Time",
     "description": "Automatically update front matter to include creation and last update times.",
-    "version": "1.5.0",
+    "version": "2.0.0",
     "minAppVersion": "1.13.0",
     "isDesktopOnly": false,
     "author": "Sébastien Dubois",

@@ -1,5 +1,46 @@
 # Release Notes
 
+## 2.0.0 (2026-08-29)
+
+### ⚠ BREAKING CHANGES
+
+- **plugin:** minAppVersion moves from 1.8.7 to 1.13.0 — the
+  declarative settings API (getSettingDefinitions) only exists there.
+
+getSettingDefinitions() replaces the display() tab: the property names
+and the save delay become plain controls, and the excluded-folder list
+becomes a native type:'list' at the top level (a group's items cannot
+host one) with an inline folder-autocomplete add row — the framework's
+addItem affordance hands back a bare element and the completion is the
+whole point of that field.
+
+The write path is a serialized persist-then-commit updateSettings
+shared by the tab and the post-migration save in loadSettings, which
+previously went straight to disk and could finish after a user edit and
+restore the pre-edit state. The debouncers every timestamp write goes
+through are reset strictly after a successful commit, so a failed write
+can no longer make a changed save delay look applied.
+
+Deliberate behavior change: an invalid save delay is refused with an
+inline error instead of being silently replaced by the default, which
+hid typos. Deleting a folder resolves the entry by value before the
+write, so two deletions issued from one render remove exactly those two
+entries.
+
+The settings-tab spec is rewritten around the declarative surface and
+keeps every guarantee the imperative version encoded — including the
+
+### Features
+
+- **plugin:** declare the settings tab (Obsidian 1.13 declarative settings)
+- **plugin:** show what's new in a tab instead of a modal dialog
+- **plugin:** surface support CTAs everywhere users can see them
+
+### Bug Fixes
+
+- **build:** align with the catalog reviewer's archive, ruleset and audit
+- **plugin:** constrain the save delay and cover what the port left untested
+
 ## 1.5.0 (2026-07-29)
 
 ### Features
