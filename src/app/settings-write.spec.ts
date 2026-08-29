@@ -17,15 +17,23 @@ interface Harness {
     plugin: InstanceType<typeof UpdateTimePlugin>
     saveData: ReturnType<typeof mock>
     cancelled: number
+    /**
+     * `createdPropertyName` of each write in the order the writes LANDED (not
+     * the order they were issued). Ordering bugs show up here and nowhere
+     * else: a write that starts first but finishes last still leaves its
+     * payload on disk.
+     */
+    landed: string[]
 }
 
 function createHarness(options?: { saveData?: () => Promise<void> }): Harness {
-    const saveData = mock(async () => {
+    const harness = { cancelled: 0, landed: [] } as unknown as Harness
+    const saveData = mock(async (data: unknown) => {
         if (options?.saveData) {
             await options.saveData()
         }
+        harness.landed.push((data as { createdPropertyName: string }).createdPropertyName)
     })
-    const harness = { cancelled: 0 } as Harness
 
     const plugin = Object.create(UpdateTimePlugin.prototype) as InstanceType<
         typeof UpdateTimePlugin
@@ -104,6 +112,37 @@ describe('updateSettings', () => {
             (harness.plugin as unknown as { lastWriteMtimes: Map<string, number> }).lastWriteMtimes
                 .size
         ).toBe(0)
+    })
+
+    test('the post-migration save goes through the write queue', async () => {
+        // A fire-and-forget saveSettings() bypasses the chain: it can still be
+        // in flight when the settings pane writes, finish last, and put the
+        // pre-edit state back on disk. Asserting the ROUTE (rather than a
+        // landing order that both implementations can produce) is what
+        // actually fails if this call site regresses.
+        const harness = createHarness()
+        const plugin = harness.plugin as unknown as {
+            loadData: () => Promise<unknown>
+            loadSettings: () => Promise<void>
+            updateSettings: (mutator: (draft: unknown) => void) => Promise<void>
+        }
+        const throughQueue: number[] = []
+        const original = plugin.updateSettings.bind(plugin)
+        plugin.updateSettings = (mutator): Promise<void> => {
+            throughQueue.push(1)
+            return original(mutator)
+        }
+        // Missing fields force the migration branch.
+        plugin.loadData = async () => ({ ignoredFolders: ['Meetings'] })
+
+        await plugin.loadSettings()
+        for (let i = 0; i < 20; i += 1) {
+            await Promise.resolve()
+        }
+
+        expect(throughQueue).toHaveLength(1)
+        expect(harness.saveData).toHaveBeenCalledTimes(1)
+        expect(harness.plugin.settings.ignoredFolders).toEqual(['Meetings'])
     })
 
     test('serializes overlapping writes so both land', async () => {

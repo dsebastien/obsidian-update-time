@@ -19,7 +19,7 @@ void mock.module('obsidian', () => ({
     AbstractInputSuggest: class AbstractInputSuggest {}
 }))
 
-const { SettingsTab } = await import('./index')
+const { SettingsTab, resolveFolderInput } = await import('./index')
 
 interface Harness {
     plugin: { settings: Record<string, unknown> }
@@ -114,6 +114,32 @@ describe('excluded folders', () => {
     test('surrounding whitespace is trimmed', async () => {
         await harness.tab.addExcludedFolder('  Journal/2026  ')
         expect(harness.plugin.settings['ignoredFolders']).toEqual(['Journal/2026'])
+    })
+
+    test('a value captured via onChange survives the field being cleared', () => {
+        // Issue #9's failure mode: the suggester blurs and clears the field
+        // before the + handler reads it. Without the mirror the click adds
+        // nothing — or worse, an empty entry that matches every path.
+        expect(resolveFolderInput('', 'Journal')).toBe('Journal')
+        // The live field wins when it still holds something.
+        expect(resolveFolderInput('Meetings', 'Journal')).toBe('Meetings')
+        // Neither source has anything usable.
+        expect(resolveFolderInput('', '')).toBe('')
+        expect(resolveFolderInput(undefined, '   ')).toBe('')
+        // Whitespace never becomes an entry.
+        expect(resolveFolderInput('  Journal/2026  ', '')).toBe('Journal/2026')
+    })
+
+    test('two concurrent additions of the same folder store it once', async () => {
+        // The dedupe check must run INSIDE the mutator, against the state the
+        // write is applied to. Deciding from a snapshot taken before the await
+        // makes both calls see an empty list and store the folder twice.
+        const [a, b] = await Promise.all([
+            harness.tab.addExcludedFolder('Meetings'),
+            harness.tab.addExcludedFolder('Meetings')
+        ])
+        expect(harness.plugin.settings['ignoredFolders']).toEqual(['Meetings'])
+        expect([a, b].filter(Boolean)).toHaveLength(1)
     })
 
     test('duplicates are not added twice and report no write', async () => {

@@ -54,15 +54,16 @@ Existing GitHub issues track making the remaining constants user-configurable:
 
 ## Settings UI
 
-`src/app/settingTab/index.ts` renders:
+`src/app/settingTab/index.ts` DECLARES the pane (Obsidian 1.13+): it implements `getSettingDefinitions()`, and `display()` is never called. Adding a control means adding a definition and a case in `getControlValue`/`setControlValue` — never an imperative `onChange` that saves for itself.
 
-- **Front-matter properties** — heading containing two text inputs: `createdPropertyName` and `updatedPropertyName`. Each input writes through `immer.produce` and calls `saveSettings()` on every keystroke (`onChange`). Empty/whitespace input is preserved in storage but is resolved to the default at write time via `resolvePropertyName`.
-- **Behavior** — heading containing the **Save delay (seconds)** numeric input (`saveDelayInSeconds`). Writes through `immer.produce` on `onChange`; non-numeric/negative input falls back to `DEFAULT_SAVE_DELAY_IN_SECONDS`. `saveSettings()` clears the per-file debouncers so the new delay applies immediately.
-- **Folders to exclude** — add/remove list backed by `FolderSuggest` (vault-folder autocomplete).
-- **Follow me on X** — CTA button opening `https://x.com/dSebastien`.
-- **Support** — section with a Buy Me A Coffee badge.
+- **Front-matter properties** — group with two `text` controls: `createdPropertyName` and `updatedPropertyName`. Empty/whitespace input is preserved in storage but resolved to the default at write time via `resolvePropertyName`.
+- **Behavior** — group with the **Save delay (seconds)** `number` control (`saveDelayInSeconds`), constrained by `min: 0`. An unparseable or emptied field resolves to the declared `defaultValue` (`DEFAULT_SAVE_DELAY_IN_SECONDS`) before validation runs — without that declaration the fallback would be `0`, i.e. a rewrite on every keystroke. A negative value is refused with an inline error, and `setControlValue` rejects it too because that method is also a public write surface.
+- **Folders to exclude** — a top-level `type: 'list'` (a group's `items` cannot host a list) with an inline `FolderSuggest` add row. `resolveFolderInput` decides which value the click meant: the suggester can clear the field before the handler reads it, so the `onChange` mirror is the fallback, and a blank result is refused — a blank entry matches every path and would disable timestamp updates vault-wide. `onDelete` resolves the entry by value before writing, because the index refers to the list as it was drawn.
+- **About** — the follow CTA and the support section.
 
-Adding a folder de-duplicates via `onlyUniqueArray` before calling `saveSettings()`.
+### Writing settings
+
+Every mutation goes through `UpdateTimePlugin.updateSettings(mutator)`: serialized (each mutation derives from the previously committed state) and persist-then-commit (memory swaps only after `saveData` succeeds, so a rejected write rolls the control back to the stored truth). The post-migration save in `loadSettings` uses it too — a fire-and-forget save could otherwise finish after a user edit and overwrite it. The per-file debouncers are reset strictly after a successful commit, so a failed write cannot make a changed delay look applied. Adding a folder de-duplicates via `onlyUniqueArray` INSIDE the mutator, so two concurrent additions cannot both build on a stale list.
 
 ## Commands
 

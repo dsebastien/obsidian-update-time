@@ -8,6 +8,19 @@ import { BUY_ME_A_COFFEE_BADGE_DATA_URL } from '../assets/buy-me-a-coffee'
 import { DEFAULT_SAVE_DELAY_IN_SECONDS, PROPERTY_CREATED, PROPERTY_UPDATED } from '../constants'
 import { renderSupportSection } from '../ui/support-links'
 
+/**
+ * Decide which value the user meant when the add button is clicked.
+ *
+ * `getValue()` alone proved unreliable at click time: the folder suggester can
+ * blur and clear the field before the handler reads it, which let empty values
+ * through — and an empty folder entry matches every path, silently disabling
+ * timestamp updates for the whole vault. The mirror kept by `onChange` is the
+ * fallback, and the result is trimmed so whitespace never becomes an entry.
+ */
+export function resolveFolderInput(searchValue: string | undefined, mirroredValue: string): string {
+    return (searchValue || mirroredValue).trim()
+}
+
 /** The settings keys addressed by `getControlValue`/`setControlValue`. */
 type ControlKey = 'createdPropertyName' | 'updatedPropertyName' | 'saveDelayInSeconds'
 
@@ -81,10 +94,17 @@ export class SettingsTab extends PluginSettingTab {
                             type: 'number',
                             key: 'saveDelayInSeconds',
                             placeholder: String(DEFAULT_SAVE_DELAY_IN_SECONDS),
-                            // The stored value must stay a usable delay: the
-                            // old tab silently replaced anything invalid with
-                            // the default, which hid typos. An inline error
-                            // says what is wrong instead.
+                            // `min` is the framework-level constraint the old
+                            // tab set by hand on the input element.
+                            min: 0,
+                            // The control resolves an unparseable or emptied
+                            // field to this value before `validate` ever runs.
+                            // Without it that fallback is 0 — a zero-second
+                            // delay rewrites front matter on every keystroke,
+                            // which is precisely what this setting exists to
+                            // avoid. The old tab replaced invalid input with
+                            // the default too, so this is also parity.
+                            defaultValue: DEFAULT_SAVE_DELAY_IN_SECONDS,
                             validate: (value: number): string | void => {
                                 if (!Number.isFinite(value) || value < 0) {
                                     return 'Enter a number of seconds, zero or more.'
@@ -152,10 +172,8 @@ export class SettingsTab extends PluginSettingTab {
                 desc: 'Any file created or updated in one of these folders will not trigger an update of the created and updated fields.',
                 render: (setting): void => {
                     let searchInput: SearchComponent | undefined
-                    // Mirror of the current input value. `getValue()` alone
-                    // proved unreliable at click time (the suggester can
-                    // blur/clear the field), which let empty values through —
-                    // an empty folder entry then excludes the whole vault.
+                    // Mirror of the current input value; see
+                    // resolveFolderInput for why it exists.
                     let currentValue = ''
                     setting.addSearch((cb) => {
                         searchInput = cb
@@ -171,7 +189,7 @@ export class SettingsTab extends PluginSettingTab {
                         cb.setIcon('plus')
                         cb.setTooltip('Add folder')
                         cb.onClick(() => {
-                            const raw = (searchInput?.getValue() || currentValue).trim()
+                            const raw = resolveFolderInput(searchInput?.getValue(), currentValue)
                             void (async (): Promise<void> => {
                                 if (await this.addExcludedFolder(raw)) {
                                     currentValue = ''
@@ -263,8 +281,11 @@ export class SettingsTab extends PluginSettingTab {
      * rather than dropped.
      */
     private refresh(): void {
-        const focused = activeDocument.activeElement
-        if (!this.hasFocusedTextControl() || !focused) {
+        if (!this.hasFocusedTextControl()) {
+            // Also clears a flag left behind by a field that was removed
+            // without ever emitting focusout, so a later structural update
+            // cannot stay pending forever.
+            this.refreshPending = false
             this.update()
             return
         }
@@ -272,7 +293,10 @@ export class SettingsTab extends PluginSettingTab {
             return
         }
         this.refreshPending = true
-        focused.addEventListener(
+        // Listen on the container rather than the focused input: focusout
+        // bubbles, and the container outlives the row, so a field that is
+        // removed while focused still releases the pending render.
+        this.containerEl.addEventListener(
             'focusout',
             () => {
                 this.refreshPending = false

@@ -27,6 +27,8 @@ This plugin is a simplified reimplementation of the [update-time-on-edit plugin]
 2. Disable **Restricted mode** if it's enabled.
 3. Select **Browse**, search for **Update Time**, install it, then enable it.
 
+> Requires Obsidian **1.13.0 or newer** (the settings pane uses the declarative settings API introduced there). On older versions, install the last release that supported them — Obsidian resolves this automatically through `versions.json`.
+
 You can also browse the catalog on the [Obsidian Community](https://community.obsidian.md/) website.
 
 ### Manual installation
