@@ -1,213 +1,203 @@
 import { test, expect, mock, beforeEach, describe } from 'bun:test'
 
-// Faithful-enough mocks of the Obsidian primitives the SettingsTab touches, so
-// the excluded-folders add/remove flow can be driven end-to-end. Regression
-// coverage for issue #9 ("Folders to exclude" not settable / empty values).
-
-class FakeInput {
-    value = ''
-}
-
-class FakeSearch {
-    inputEl = new FakeInput()
-    private changeCb?: (value: string) => void
-    setPlaceholder() {
-        return this
-    }
-    setValue(v: string) {
-        this.inputEl.value = v
-        return this
-    }
-    getValue() {
-        return this.inputEl.value
-    }
-    onChange(cb: (value: string) => void) {
-        this.changeCb = cb
-        return this
-    }
-    // Test helper: simulate a user typing into the field.
-    type(v: string) {
-        this.inputEl.value = v
-        this.changeCb?.(v)
-    }
-    // Test helper: simulate the field being cleared (e.g. by the suggester)
-    // without firing onChange, mimicking the runtime that let empty values slip
-    // through when the code relied solely on getValue().
-    clearSilently() {
-        this.inputEl.value = ''
-    }
-}
-
-class FakeButton {
-    click?: () => unknown
-    setIcon() {
-        return this
-    }
-    setTooltip() {
-        return this
-    }
-    setButtonText() {
-        return this
-    }
-    setCta() {
-        return this
-    }
-    onClick(cb: () => unknown) {
-        this.click = cb
-        return this
-    }
-}
-
-const registry: { search?: FakeSearch; buttons: FakeButton[]; name?: string }[] = []
-
-class FakeSetting {
-    private entry: { search?: FakeSearch; buttons: FakeButton[]; name?: string } = {
-        buttons: []
-    }
-    constructor(_el: unknown) {
-        registry.push(this.entry)
-    }
-    setName(n: string) {
-        this.entry.name = n
-        return this
-    }
-    setDesc() {
-        return this
-    }
-    setHeading() {
-        return this
-    }
-    addText(cb: (t: FakeSearch) => void) {
-        cb(new FakeSearch())
-        return this
-    }
-    addSearch(cb: (s: FakeSearch) => void) {
-        const s = new FakeSearch()
-        this.entry.search = s
-        cb(s)
-        return this
-    }
-    addButton(cb: (b: FakeButton) => void) {
-        const b = new FakeButton()
-        this.entry.buttons.push(b)
-        cb(b)
-        return this
-    }
-}
+// The settings pane is declarative (Obsidian 1.13+): its rows are DEFINITIONS,
+// not imperatively built Setting objects, so these tests drive the write
+// surface the framework calls — addExcludedFolder, setControlValue and the
+// list's onDelete — rather than a DOM. The guarantees they cover are the ones
+// the imperative version had, including the issue #9 regressions ("Folders to
+// exclude" not settable / empty values excluding the whole vault).
 
 void mock.module('obsidian', () => ({
+    Notice: class Notice {},
     App: class App {},
-    PluginSettingTab: class PluginSettingTab {
-        app: unknown
-        constructor(app: unknown) {
-            this.app = app
-        }
-    },
-    Setting: FakeSetting,
-    SearchComponent: FakeSearch,
-    AbstractInputSuggest: class AbstractInputSuggest {},
+    Plugin: class Plugin {},
+    PluginSettingTab: class PluginSettingTab {},
+    Setting: class Setting {},
+    TFile: class TFile {},
     TFolder: class TFolder {},
-    TAbstractFile: class TAbstractFile {}
+    TAbstractFile: class TAbstractFile {},
+    AbstractInputSuggest: class AbstractInputSuggest {}
 }))
 
 const { SettingsTab } = await import('./index')
 
-interface FakePlugin {
-    settings: { ignoredFolders: string[] }
-    saveSettings: () => Promise<void>
+interface Harness {
+    plugin: { settings: Record<string, unknown> }
+    tab: InstanceType<typeof SettingsTab>
+    saveCount: number
+    failWrites: boolean
 }
 
-let plugin: FakePlugin
-let saveCount: number
-let tab: InstanceType<typeof SettingsTab>
+let harness: Harness
 
-const excludedFolderEntry = () => registry.find((e) => e.search)!
+function listDefinition(): {
+    onDelete?: (index: number) => void
+    items?: { name: string }[]
+} {
+    const definitions = harness.tab.getSettingDefinitions() as unknown as {
+        type?: string
+        onDelete?: (index: number) => void
+        items?: { name: string }[]
+    }[]
+    const list = definitions.find((definition) => 'list' === definition.type)
+    expect(list).toBeDefined()
+    return list!
+}
 
-const renderExcluded = () => {
-    registry.length = 0
-    tab.renderExcludedFolders()
+/** Lets the fire-and-forget writes the pane starts run to completion. */
+async function settle(): Promise<void> {
+    for (let i = 0; i < 20; i += 1) {
+        await Promise.resolve()
+    }
 }
 
 beforeEach(() => {
-    registry.length = 0
-    saveCount = 0
-    plugin = {
+    let writeChain: Promise<void> = Promise.resolve()
+    const plugin = {
         settings: {
             ignoredFolders: [] as string[],
             createdPropertyName: 'created',
             updatedPropertyName: 'updated',
             saveDelayInSeconds: 10
-        } as never,
-        saveSettings: async () => {
-            saveCount++
+        } as Record<string, unknown>,
+        // Stands in for the plugin's serialized persist-then-commit write
+        // path: writes queue, each mutation derives from the previously
+        // COMMITTED state, and the mutation is applied only once the "save"
+        // succeeds. Modelling the queue matters — without it the harness
+        // would let two overlapping writes both build on the same base and
+        // the tests would pass against code that has the bug.
+        updateSettings: (mutator: (draft: Record<string, unknown>) => void): Promise<void> => {
+            const run = async (): Promise<void> => {
+                const next = structuredClone(plugin.settings)
+                mutator(next)
+                if (harness.failWrites) {
+                    throw new Error('disk full')
+                }
+                plugin.settings = next
+                harness.saveCount += 1
+            }
+            const queued = writeChain.then(run, run)
+            writeChain = queued.catch(() => {})
+            return queued
         }
     }
-    tab = new SettingsTab({} as never, plugin as never)
-    // @ts-expect-error test shim for the DOM container
-    tab.containerEl = { empty() {}, createDiv: () => ({ classList: { add() {} } }) }
-    // Isolate the excluded-folders section; the full display() pulls in DOM APIs.
-    tab.display = renderExcluded
+
+    const tab = Object.create(SettingsTab.prototype) as InstanceType<typeof SettingsTab>
+    const internals = tab as unknown as Record<string, unknown>
+    internals['plugin'] = plugin
+    internals['refresh'] = (): void => {}
+
+    harness = { plugin, tab, saveCount: 0, failWrites: false }
 })
 
-describe('excluded folders settings', () => {
-    test('typing a folder then clicking + adds it', async () => {
-        renderExcluded()
-        const entry = excludedFolderEntry()
-        entry.search!.type('Meetings')
-        await entry.buttons[0]!.click!()
-
-        expect(plugin.settings.ignoredFolders).toEqual(['Meetings'])
-        expect(saveCount).toBe(1)
+describe('excluded folders', () => {
+    test('a typed folder is added', async () => {
+        expect(await harness.tab.addExcludedFolder('Meetings')).toBe(true)
+        expect(harness.plugin.settings['ignoredFolders']).toEqual(['Meetings'])
+        expect(harness.saveCount).toBe(1)
     })
 
-    test('clicking + with an empty field does not add a blank entry', async () => {
-        renderExcluded()
-        const entry = excludedFolderEntry()
-        // User never typed anything.
-        await entry.buttons[0]!.click!()
-
-        expect(plugin.settings.ignoredFolders).toEqual([])
-        expect(saveCount).toBe(0)
+    test('an empty field does not add a blank entry', async () => {
+        // A blank entry matches every path and would silently disable
+        // timestamp updates for the whole vault.
+        expect(await harness.tab.addExcludedFolder('')).toBe(false)
+        expect(harness.plugin.settings['ignoredFolders']).toEqual([])
+        expect(harness.saveCount).toBe(0)
     })
 
     test('whitespace-only input is not added', async () => {
-        renderExcluded()
-        const entry = excludedFolderEntry()
-        entry.search!.type('   ')
-        await entry.buttons[0]!.click!()
-
-        expect(plugin.settings.ignoredFolders).toEqual([])
+        expect(await harness.tab.addExcludedFolder('   ')).toBe(false)
+        expect(harness.plugin.settings['ignoredFolders']).toEqual([])
+        expect(harness.saveCount).toBe(0)
     })
 
-    test('a value captured via onChange survives the field being cleared', async () => {
-        // Reproduces the reported failure mode: the field goes empty before the
-        // + handler reads it. The onChange mirror keeps the value.
-        renderExcluded()
-        const entry = excludedFolderEntry()
-        entry.search!.type('Journal')
-        entry.search!.clearSilently()
-        await entry.buttons[0]!.click!()
-
-        expect(plugin.settings.ignoredFolders).toEqual(['Journal'])
+    test('surrounding whitespace is trimmed', async () => {
+        await harness.tab.addExcludedFolder('  Journal/2026  ')
+        expect(harness.plugin.settings['ignoredFolders']).toEqual(['Journal/2026'])
     })
 
-    test('duplicate folders are not added twice', async () => {
-        plugin.settings.ignoredFolders = ['Meetings']
-        renderExcluded()
-        const entry = excludedFolderEntry()
-        entry.search!.type('Meetings')
-        await entry.buttons[0]!.click!()
-
-        expect(plugin.settings.ignoredFolders).toEqual(['Meetings'])
+    test('duplicates are not added twice and report no write', async () => {
+        harness.plugin.settings['ignoredFolders'] = ['Meetings']
+        expect(await harness.tab.addExcludedFolder('Meetings')).toBe(false)
+        expect(harness.plugin.settings['ignoredFolders']).toEqual(['Meetings'])
     })
 
-    test('an existing folder can be removed', async () => {
-        plugin.settings.ignoredFolders = ['Meetings', 'Journal']
-        renderExcluded()
-        // Each existing entry renders its own Setting with a Remove button.
-        const removeRow = registry.find((e) => e.name === 'Journal')!
-        await removeRow.buttons[0]!.click!()
+    test('an existing folder can be removed by its drawn position', async () => {
+        harness.plugin.settings['ignoredFolders'] = ['Meetings', 'Journal']
+        const list = listDefinition()
+        expect(list.items?.map((item) => item.name)).toEqual(['Meetings', 'Journal'])
 
-        expect(plugin.settings.ignoredFolders).toEqual(['Meetings'])
+        list.onDelete?.(1)
+        await settle()
+        expect(harness.plugin.settings['ignoredFolders']).toEqual(['Meetings'])
+    })
+
+    test('deleting resolves the entry before the write, not the index', async () => {
+        // The framework hands back a position into the list AS DRAWN. Two
+        // deletions issued from the same render must remove exactly those two
+        // entries — resolving the second by index after the first landed would
+        // remove the wrong folder.
+        harness.plugin.settings['ignoredFolders'] = ['A', 'B', 'C']
+        const list = listDefinition()
+        list.onDelete?.(0)
+        list.onDelete?.(2)
+        await settle()
+        expect(harness.plugin.settings['ignoredFolders']).toEqual(['B'])
+    })
+
+    test('a failed delete leaves the list untouched', async () => {
+        harness.plugin.settings['ignoredFolders'] = ['Meetings']
+        harness.failWrites = true
+        listDefinition().onDelete?.(0)
+        await settle()
+        expect(harness.plugin.settings['ignoredFolders']).toEqual(['Meetings'])
+    })
+})
+
+describe('setControlValue', () => {
+    test('persists the property names', async () => {
+        await harness.tab.setControlValue('createdPropertyName', 'made-on')
+        await harness.tab.setControlValue('updatedPropertyName', 'changed-on')
+        expect(harness.plugin.settings['createdPropertyName']).toBe('made-on')
+        expect(harness.plugin.settings['updatedPropertyName']).toBe('changed-on')
+        expect(harness.tab.getControlValue('createdPropertyName')).toBe('made-on')
+    })
+
+    test('accepts a valid save delay, including zero', async () => {
+        await harness.tab.setControlValue('saveDelayInSeconds', 0)
+        expect(harness.plugin.settings['saveDelayInSeconds']).toBe(0)
+        await harness.tab.setControlValue('saveDelayInSeconds', 30)
+        expect(harness.plugin.settings['saveDelayInSeconds']).toBe(30)
+    })
+
+    test('rejects a negative or non-finite save delay without writing', async () => {
+        // Every timestamp write goes through debouncers built from this value.
+        for (const bad of [-1, Number.POSITIVE_INFINITY, Number.NaN, '10']) {
+            let caught: unknown
+            await harness.tab.setControlValue('saveDelayInSeconds', bad).catch((e: unknown) => {
+                caught = e
+            })
+            expect(caught).toBeInstanceOf(Error)
+        }
+        expect(harness.plugin.settings['saveDelayInSeconds']).toBe(10)
+        expect(harness.saveCount).toBe(0)
+    })
+
+    test('rejects a type-mismatched property name', async () => {
+        let caught: unknown
+        await harness.tab.setControlValue('createdPropertyName', 42).catch((e: unknown) => {
+            caught = e
+        })
+        expect((caught as Error).message).toContain('expects a string')
+        expect(harness.saveCount).toBe(0)
+    })
+
+    test('rejects an unknown key', async () => {
+        let caught: unknown
+        await harness.tab.setControlValue('__proto__', 'x').catch((e: unknown) => {
+            caught = e
+        })
+        expect((caught as Error).message).toContain('does not address a known field')
+        expect(harness.saveCount).toBe(0)
     })
 })

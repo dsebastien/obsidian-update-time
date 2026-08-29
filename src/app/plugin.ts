@@ -126,7 +126,13 @@ export class UpdateTimePlugin extends Plugin {
         log(`Settings loaded`, 'debug', loadedSettings)
 
         if (needToSaveSettings) {
-            void this.saveSettings()
+            // Through the same queue as user edits: a fire-and-forget save
+            // could still be in flight when the settings pane writes, finish
+            // last, and put the pre-edit state back on disk.
+            void this.updateSettings(() => {
+                // The migration already produced `this.settings`; this write
+                // exists to persist it in queue order.
+            })
         }
     }
 
@@ -136,11 +142,46 @@ export class UpdateTimePlugin extends Plugin {
     async saveSettings() {
         log('Saving settings', 'debug', this.settings)
         await this.saveData(this.settings)
-        // Drop existing debouncers so a changed save delay takes effect immediately.
+        this.resetDebouncers()
+        log('Settings saved', 'debug', this.settings)
+    }
+
+    /**
+     * Drop existing debouncers so a changed save delay takes effect
+     * immediately, and forget the mtimes recorded under the old settings.
+     */
+    private resetDebouncers(): void {
         this.debouncers.forEach((debouncer) => debouncer.cancel())
         this.debouncers.clear()
         this.lastWriteMtimes.clear()
-        log('Settings saved', 'debug', this.settings)
+    }
+
+    /** Serializes settings writes; see updateSettings. */
+    private settingsWriteChain: Promise<void> = Promise.resolve()
+
+    /**
+     * Apply a mutation to the settings (via immer) and persist the result.
+     * The single write path — the declarative settings tab routes every
+     * control edit through here so persistence happens in exactly one place.
+     *
+     * Persist-then-commit: memory is swapped only after saveData() succeeds,
+     * so a rejected write rolls the control back to the on-disk truth.
+     * Serialized: writes queue and each mutation derives from the previous
+     * COMMITTED state — without this, overlapping calls produce from the same
+     * base across the save await and the second commit silently drops the
+     * first edit. The debouncers are reset strictly AFTER a successful
+     * commit, so a failed write cannot make a changed save delay look applied.
+     */
+    updateSettings(mutator: (draft: Draft<PluginSettings>) => void): Promise<void> {
+        const run = async (): Promise<void> => {
+            const next = produce(this.settings, mutator)
+            await this.saveData(next)
+            this.settings = next
+            this.resetDebouncers()
+        }
+        const p = this.settingsWriteChain.then(run, run)
+        this.settingsWriteChain = p.catch(() => {})
+        return p
     }
 
     /**
