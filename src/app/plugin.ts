@@ -28,7 +28,7 @@ export class UpdateTimePlugin extends Plugin {
     /**
      * The plugin settings are immutable
      */
-    settings: PluginSettings = produce(DEFAULT_SETTINGS, () => DEFAULT_SETTINGS)
+    override settings: PluginSettings = produce(DEFAULT_SETTINGS, () => DEFAULT_SETTINGS)
 
     /**
      * Per-file debouncers. Each changed file is processed only once typing has
