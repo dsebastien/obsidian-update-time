@@ -71,16 +71,20 @@ export async function runBackfillProperties(plugin: UpdateTimePlugin): Promise<B
 
         let didWrite = false
         try {
-            await plugin.app.fileManager.processFrontMatter(file, (frontMatter) => {
-                didWrite = applyBackfillToFrontMatter({
-                    frontMatter,
-                    cTime,
-                    mTime,
-                    createdKey,
-                    updatedKey,
-                    dateFormat: DATE_FORMAT
-                })
-            })
+            await plugin.app.fileManager.processFrontMatter(
+                file,
+                // Obsidian types the parsed front matter as any
+                (frontMatter: Record<string, unknown>) => {
+                    didWrite = applyBackfillToFrontMatter({
+                        frontMatter,
+                        cTime,
+                        mTime,
+                        createdKey,
+                        updatedKey,
+                        dateFormat: DATE_FORMAT
+                    })
+                }
+            )
         } catch (e: unknown) {
             result.errors += 1
             if (hasName(e) && 'YAMLParseError' === e.name) {
