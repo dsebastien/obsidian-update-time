@@ -67,14 +67,15 @@ beforeEach(() => {
         // would let two overlapping writes both build on the same base and
         // the tests would pass against code that has the bug.
         updateSettings: (mutator: (draft: Record<string, unknown>) => void): Promise<void> => {
-            const run = async (): Promise<void> => {
+            const run = (): Promise<void> => {
                 const next = structuredClone(plugin.settings)
                 mutator(next)
                 if (harness.failWrites) {
-                    throw new Error('disk full')
+                    return Promise.reject(new Error('disk full'))
                 }
                 plugin.settings = next
                 harness.saveCount += 1
+                return Promise.resolve()
             }
             const queued = writeChain.then(run, run)
             writeChain = queued.catch(() => {})

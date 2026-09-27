@@ -133,7 +133,7 @@ describe('updateSettings', () => {
             return original(mutator)
         }
         // Missing fields force the migration branch.
-        plugin.loadData = async () => ({ ignoredFolders: ['Meetings'] })
+        plugin.loadData = () => Promise.resolve({ ignoredFolders: ['Meetings'] })
 
         await plugin.loadSettings()
         for (let i = 0; i < 20; i += 1) {
