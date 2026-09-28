@@ -1,9 +1,11 @@
 import { describe, expect, test, mock } from 'bun:test'
+import { produce } from 'immer'
+import type { App, PluginManifest } from 'obsidian'
 
 // The `obsidian` module is mocked globally by src/test-setup.ts (preloaded
 // via bunfig.toml), so the plugin module's runtime dependencies resolve.
 const { UpdateTimePlugin } = await import('./plugin')
-const { DEFAULT_SETTINGS } = await import('./types')
+const { DEFAULT_SETTINGS, createDefaultSettings } = await import('./types')
 
 /**
  * Behavioral coverage for the plugin's settings write path. Nothing in CI
@@ -39,7 +41,9 @@ function createHarness(options?: { saveData?: () => Promise<void> }): Harness {
         typeof UpdateTimePlugin
     >
     const internals = plugin as unknown as Record<string, unknown>
-    internals['settings'] = { ...DEFAULT_SETTINGS }
+    // Never a spread of DEFAULT_SETTINGS: it shares ignoredFolders, which the
+    // first updateSettings produce would then freeze for the whole process.
+    internals['settings'] = produce(createDefaultSettings(), () => {})
     internals['settingsWriteChain'] = Promise.resolve()
     internals['saveData'] = saveData
     internals['debouncers'] = new Map([
@@ -171,5 +175,51 @@ describe('updateSettings', () => {
         await Promise.all([a, b])
         expect(plugin.settings.createdPropertyName).toBe('first')
         expect(plugin.settings.updatedPropertyName).toBe('second')
+    })
+})
+
+describe('default settings', () => {
+    test('constructing the plugin never freezes the shared defaults', () => {
+        const plugin = new UpdateTimePlugin({} as App, {} as PluginManifest)
+        expect(Object.isFrozen(plugin.settings)).toBe(true)
+        expect(Object.isFrozen(DEFAULT_SETTINGS)).toBe(false)
+        expect(Object.isFrozen(DEFAULT_SETTINGS.ignoredFolders)).toBe(false)
+    })
+
+    test('loadSettings with no stored data never freezes the shared defaults', async () => {
+        // The harness skips the constructor: its field initializer is the
+        // other test's case.
+        const { plugin } = createHarness()
+        const settings = plugin.settings
+        Object.assign(plugin, { loadData: (): Promise<unknown> => Promise.resolve(null) })
+
+        await plugin.loadSettings()
+
+        // Immer deep-freezes what produce returns, including subtrees shared
+        // with its base: producing from DEFAULT_SETTINGS froze the constant
+        // for the rest of the process.
+        expect(plugin.settings).toBe(settings)
+        expect(Object.isFrozen(DEFAULT_SETTINGS)).toBe(false)
+        expect(Object.isFrozen(DEFAULT_SETTINGS.ignoredFolders)).toBe(false)
+    })
+
+    test('updateSettings from the defaults never freezes the shared defaults', async () => {
+        const { plugin } = createHarness()
+
+        await plugin.updateSettings((draft) => {
+            draft.createdPropertyName = 'made-on'
+        })
+
+        // The untouched ignoredFolders is shared with the base and frozen
+        // with the result: the base must never hold the constant's array.
+        expect(Object.isFrozen(plugin.settings.ignoredFolders)).toBe(true)
+        expect(Object.isFrozen(DEFAULT_SETTINGS.ignoredFolders)).toBe(false)
+    })
+
+    test('each default settings object is an independent copy', () => {
+        const one = createDefaultSettings()
+        one.ignoredFolders.push('Meetings')
+        expect(createDefaultSettings().ignoredFolders).toEqual([])
+        expect(DEFAULT_SETTINGS.ignoredFolders).toEqual([])
     })
 })

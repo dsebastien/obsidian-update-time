@@ -1,7 +1,7 @@
 import { registerWhatsNewView } from './whats-new'
 import { debounce, Plugin, TAbstractFile, TFile } from 'obsidian'
 import type { Debouncer } from 'obsidian'
-import { DEFAULT_SETTINGS } from './types'
+import { createDefaultSettings } from './types'
 import type { PluginSettings } from './types'
 import { SettingsTab } from './settingTab'
 import { log } from './utils/log'
@@ -28,7 +28,7 @@ export class UpdateTimePlugin extends Plugin {
     /**
      * The plugin settings are immutable
      */
-    override settings: PluginSettings = produce(DEFAULT_SETTINGS, () => DEFAULT_SETTINGS)
+    override settings: PluginSettings = produce(createDefaultSettings(), () => {})
 
     /**
      * Per-file debouncers. Each changed file is processed only once typing has
@@ -75,11 +75,10 @@ export class UpdateTimePlugin extends Plugin {
      */
     async loadSettings() {
         log('Loading settings', 'debug')
-        let loadedSettings = (await this.loadData()) as PluginSettings
+        const loadedSettings = (await this.loadData()) as PluginSettings
 
         if (!loadedSettings) {
             log('Using default settings', 'debug')
-            loadedSettings = produce(DEFAULT_SETTINGS, () => DEFAULT_SETTINGS)
             return
         }
 
