@@ -139,14 +139,19 @@ export class SettingsTab extends PluginSettingTab {
                     {
                         name: 'Support',
                         searchable: false,
-                        render: (setting): void => {
+                        render: (setting): (() => void) => {
                             setting.infoEl.remove() // the section draws its own headings
                             // `.setting-item` is a flex ROW; the support block
                             // is a stack of full-width rows.
                             setting.settingEl.addClass('settings-stack')
-                            renderSupportSection(setting.settingEl, (el) => {
+                            // In a wrapper removed by the returned cleanup: update() re-runs
+                            // this hook on the SAME row and only resets its control area, so
+                            // content appended straight to settingEl would pile up.
+                            const blockEl = setting.settingEl.createDiv()
+                            renderSupportSection(blockEl, (el) => {
                                 this.renderBuyMeACoffeeBadge(el)
                             })
+                            return () => blockEl.remove()
                         }
                     }
                 ]
