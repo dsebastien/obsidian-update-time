@@ -323,7 +323,7 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 - **Never `produce()` from the shared `DEFAULT_SETTINGS`.** Immer
   deep-freezes what `produce` returns, including every subtree it shares with
   its base, so `produce(DEFAULT_SETTINGS, …)` freezes the exported constant
-  (and its arrays) for the rest of the process. Later code or specs that touch
+  (nested values too) for the rest of the process. Later code or specs that touch
   it fail with "Attempted to assign to readonly property". The `test` script
   runs `bun test --isolate`, which hides it, so `validate` and CI never see
   it: only the `Object.isFrozen` assertions in `src/app/settings-write.spec.ts`
